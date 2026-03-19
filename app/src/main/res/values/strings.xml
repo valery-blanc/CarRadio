@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CarRadio</string>
+    <string name="add_station">Ajouter</string>
+    <string name="settings">Paramètres</string>
+    <string name="now_playing">En cours de lecture</string>
+    <string name="buffering">Chargement…</string>
+    <string name="error_no_network">Pas de connexion réseau</string>
+    <string name="error_stream_unavailable">Station indisponible</string>
+    <string name="error_api_unavailable">Impossible de contacter Radio Browser</string>
+    <string name="retry">Réessayer</string>
+    <string name="my_favorites">Mes favoris</string>
+    <string name="manage_favorites">Gérer mes favoris</string>
+    <string name="favorites_count">%1$d/16 stations configurées</string>
+    <string name="playback_section">Lecture</string>
+    <string name="display_section">Affichage</string>
+    <string name="about_section">À propos</string>
+    <string name="background_playback">Continuer la lecture en arrière-plan</string>
+    <string name="screen_always_on">Écran toujours allumé</string>
+    <string name="preferred_quality">Qualité préférée</string>
+    <string name="quality_high">Haute (192k+)</string>
+    <string name="quality_normal">Normale (128k)</string>
+    <string name="quality_low">Basse (&lt;128k)</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_data">Données stations : radio-browser.info</string>
+    <string name="choose_country">Choisir un pays</string>
+    <string name="choose_station">Choisir une station</string>
+    <string name="search_placeholder">Rechercher…</string>
+    <string name="station_added">Station ajoutée</string>
+    <string name="modify">Modifier</string>
+    <string name="delete">Supprimer</string>
+    <string name="page_indicator">Page %1$d / 2</string>
+    <string name="notification_channel_name">Lecture radio</string>
+    <string name="notification_channel_description">Contrôles de lecture CarRadio</string>
+</resources>

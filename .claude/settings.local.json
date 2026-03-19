@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where gradle:*)",
+      "Read(//c/Users/Val/AppData/Local/Android/Sdk//**)",
+      "Read(//c/Android/**)",
+      "Bash(cd \"C:/WORK/CarRadio\" && \"/c/Users/Val/.gradle/wrapper/dists/gradle-8.13-bin/5xuhj0ry160q40clulazy9h7d/gradle-8.13/bin/gradle\" wrapper --gradle-version 8.13 2>&1)",
+      "Bash(cd \"C:/WORK/CarRadio\" && \"/c/Users/Val/.gradle/wrapper/dists/gradle-8.14.3-all/10utluxaxniiv4wxiphsi49nj/gradle-8.14.3/bin/gradle\" wrapper --gradle-version 8.14.3 --distribution-type all 2>&1)",
+      "Bash(cd \"C:/WORK/CarRadio\" && \"/c/Users/Val/.gradle/wrapper/dists/gradle-8.14.3-all/10utluxaxniiv4wxiphsi49nj/gradle-8.14.3/bin/gradle\" wrapper --gradle-version 8.14.3 --stacktrace 2>&1 | head -50)",
+      "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/java\" -version 2>&1)",
+      "Bash(rm \"C:/WORK/CarRadio/settings.gradle\" && export JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\" && cd \"C:/WORK/CarRadio\" && echo \"pluginManagement { repositories { google\\(\\); mavenCentral\\(\\); gradlePluginPortal\\(\\) } }\ndependencyResolutionManagement { repositoriesMode.set\\(RepositoriesMode.FAIL_ON_PROJECT_REPOS\\); repositories { google\\(\\); mavenCentral\\(\\) } }\nrootProject.name = \\\\\"CarRadio\\\\\"\ninclude\\(\\\\\":app\\\\\"\\)\" > settings.gradle.kts && \"/c/Users/Val/.gradle/wrapper/dists/gradle-8.14.3-all/10utluxaxniiv4wxiphsi49nj/gradle-8.14.3/bin/gradle\" wrapper --gradle-version 8.14.3 --distribution-type all 2>&1)",
+      "Bash(cd \"C:/WORK/CarRadio\" && ANDROID_HOME=\"/c/Users/Val/AppData/Local/Android/Sdk\" ./gradlew assembleDebug 2>&1)",
+      "Bash(grep -A5 \"error\\\\|Error\\\\|Hilt\" \"C:/Users/Val/AppData/Local/Temp/claude/C--WORK-CarRadio/88719189-c85a-42f2-9a65-4b0fc5878bcc/tasks/bha9pojhz.output\" | grep -v \"^--$\" | head -60)",
+      "Bash(\"/c/Users/Val/AppData/Local/Android/Sdk/platform-tools/adb\" devices:*)",
+      "Bash(cd \"C:/WORK/CarRadio\" && ANDROID_HOME=\"/c/Users/Val/AppData/Local/Android/Sdk\" ./gradlew installDebug 2>&1)",
+      "Bash(cd \"C:/WORK/CarRadio\" && ANDROID_HOME=\"/c/Users/Val/AppData/Local/Android/Sdk\" ./gradlew installDebug 2>&1 | tail -20)",
+      "Bash(\"/c/Users/Val/AppData/Local/Android/Sdk/platform-tools/adb\" logcat:*)",
+      "Bash(cd \"C:/WORK/CarRadio\" && ANDROID_HOME=\"/c/Users/Val/AppData/Local/Android/Sdk\" ./gradlew installDebug 2>&1 | tail -10)"
+    ]
+  }
+}
