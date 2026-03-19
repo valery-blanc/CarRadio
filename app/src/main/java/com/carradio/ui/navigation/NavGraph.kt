@@ -60,6 +60,9 @@ fun NavGraph() {
                 onBack = { navController.popBackStack() },
                 onCountrySelected = { iso, name ->
                     navController.navigate(Routes.stationList(iso, name, slotPosition))
+                },
+                onStationDirectlySelected = {
+                    navController.popBackStack(Routes.FAVORITES_PICKER, inclusive = false)
                 }
             )
         }

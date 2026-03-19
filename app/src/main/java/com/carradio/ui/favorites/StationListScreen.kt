@@ -109,20 +109,24 @@ fun StationListScreen(
 }
 
 @Composable
-private fun StationItem(station: RadioStation, onClick: () -> Unit) {
+internal fun StationItem(station: RadioStation, onClick: () -> Unit) {
     ListItem(
         headlineContent = {
             Text(station.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
         },
         supportingContent = {
-            Column {
-                if (station.codec.isNotBlank()) {
-                    Text(
-                        "${station.codec} · ${station.bitrate}k",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
+            val parts = buildList {
+                if (station.codec.isNotBlank()) add("${station.codec} · ${station.bitrate}k")
+                if (station.subdivision.isNotBlank()) add(station.subdivision)
+                if (station.country.isNotBlank()) add(station.country)
+                if (station.languages.isNotBlank()) add(station.languages)
+            }
+            if (parts.isNotEmpty()) {
+                Text(
+                    parts.joinToString(" · "),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
             }
         },
         leadingContent = {

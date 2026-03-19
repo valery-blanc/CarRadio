@@ -118,9 +118,10 @@ Retourne : `[{ "name": "France", "iso_3166_1": "FR", "stationcount": 512 }, ...]
 
 #### Rechercher des stations par pays (endpoint principal)
 ```
-GET /json/stations/search?countrycode=FR&order=votes&reverse=true&hidebroken=true&limit=200
+GET /json/stations/search?countrycode=FR&order=clickcount&reverse=true&hidebroken=true&limit=200
 ```
 Utiliser le code ISO (`countrycode`) plutôt que le nom du pays — plus fiable (pas de problèmes d'accents ou de casse).
+Trier par `clickcount` (nombre de lectures) et non par `votes` — reflète mieux la popularité réelle et inclut davantage de stations connues dans le top 200.
 
 #### Rechercher par nom de pays (alternative)
 ```

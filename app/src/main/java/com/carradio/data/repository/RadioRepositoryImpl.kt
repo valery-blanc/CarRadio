@@ -62,6 +62,15 @@ class RadioRepositoryImpl @Inject constructor(
     override suspend fun getStationsByCountryCode(countryCode: String): List<RadioStation> =
         api.getStationsByCountryCode(countryCode).map { it.toDomain() }
 
+    override suspend fun searchStationsByName(name: String): List<RadioStation> =
+        api.searchStationsByName(name).map { it.toDomain() }
+
+    override suspend fun getTagSuggestions(name: String): List<String> =
+        api.getTagSuggestions(searchTerm = name).map { it.name }
+
+    override suspend fun getStationsByTag(tag: String): List<RadioStation> =
+        api.getStationsByTag(tag).map { it.toDomain() }
+
     override suspend fun notifyClick(stationUuid: String) {
         try { api.notifyClick(stationUuid) } catch (_: Exception) { }
     }

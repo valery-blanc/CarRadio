@@ -50,8 +50,37 @@
 ### Bugs corrigés
 - [x] BUG-001 : ForegroundServiceDidNotStartInTimeException (crash au démarrage)
 - [x] BUG-002 : Streams silencieux — HTTP bloqué par Android (network_security_config)
+- [x] BUG-003 : Stations manquantes — tri par `votes` remplacé par `clickcount`
 
 ### Déploiement
 - [x] Build réussi (Kotlin 2.0.21 + Hilt 2.51 + AGP 8.7.3)
 - [x] Installé sur appareil (2201116PG - Android 13)
 - [x] Testé et confirmé fonctionnel par l'utilisateur
+
+## FEAT-002 : Recherche de stations par nom
+- [x] Endpoint `searchStationsByName` dans RadioBrowserApi
+- [x] Méthode `searchStationsByName` dans RadioRepository + Impl
+- [x] États `nameSearchQuery`, `nameSearchState` dans FavoritesViewModel
+- [x] CountryPickerScreen : section "Recherche par nom" avec ImeAction.Search
+- [x] NavGraph : callback `onStationDirectlySelected`
+- [x] Testé et confirmé par l'utilisateur
+
+## FEAT-003 : Enrichissement résultats recherche par nom
+- [x] `StationDto` : ajout `state`, `language`, `tags` (champs nullable)
+- [x] `RadioStation` : ajout `subdivision`, `languages`, `tags`
+- [x] `StationItem` : affichage enrichi (codec · bitrate · ville · pays · langue)
+- [x] Limite recherche par nom : 100 → 30
+- [x] Testé et confirmé par l'utilisateur
+
+## FEAT-004 : Recherche par tag avec auto-complétion
+- [x] `TagDto` : nouveau DTO
+- [x] `RadioBrowserApi` : `getTagSuggestions` (path `/json/tags/{searchTerm}`), `getStationsByTag`
+- [x] `RadioRepository` + `RadioRepositoryImpl` : deux nouvelles méthodes
+- [x] `FavoritesViewModel` : `tagSearchQuery`, `tagSuggestions`, `tagSearchState` + actions + debounce 300ms + min 3 chars
+- [x] `CountryPickerScreen` : section "Recherche par tag" avec ExposedDropdownMenuBox
+- [x] Testé et confirmé par l'utilisateur
+
+## FEAT-005 : Icône de l'application
+- [x] Icônes générées pour toutes densités (mdpi→xxxhdpi) via ImageMagick
+- [x] `AndroidManifest.xml` : `android:icon` et `android:roundIcon` ajoutés
+- [x] Testé et confirmé par l'utilisateur

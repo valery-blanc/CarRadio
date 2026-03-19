@@ -13,5 +13,8 @@ interface RadioRepository {
     suspend fun getFavoritesCount(): Int
     suspend fun getCountries(): List<Country>
     suspend fun getStationsByCountryCode(countryCode: String): List<RadioStation>
+    suspend fun searchStationsByName(name: String): List<RadioStation>
+    suspend fun getTagSuggestions(name: String): List<String>
+    suspend fun getStationsByTag(tag: String): List<RadioStation>
     suspend fun notifyClick(stationUuid: String)
 }

@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -37,6 +39,23 @@ class FavoritesViewModel @Inject constructor(
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _nameSearchQuery = MutableStateFlow("")
+    val nameSearchQuery: StateFlow<String> = _nameSearchQuery.asStateFlow()
+
+    private val _nameSearchState = MutableStateFlow<UiState<List<RadioStation>>?>(null)
+    val nameSearchState: StateFlow<UiState<List<RadioStation>>?> = _nameSearchState.asStateFlow()
+
+    private val _tagSearchQuery = MutableStateFlow("")
+    val tagSearchQuery: StateFlow<String> = _tagSearchQuery.asStateFlow()
+
+    private val _tagSuggestions = MutableStateFlow<List<String>>(emptyList())
+    val tagSuggestions: StateFlow<List<String>> = _tagSuggestions.asStateFlow()
+
+    private val _tagSearchState = MutableStateFlow<UiState<List<RadioStation>>?>(null)
+    val tagSearchState: StateFlow<UiState<List<RadioStation>>?> = _tagSearchState.asStateFlow()
+
+    private var tagSuggestionsJob: Job? = null
 
     // Featured countries shown first
     val featuredIsos = listOf("FR", "CH", "BE", "CA")
@@ -67,6 +86,67 @@ class FavoritesViewModel @Inject constructor(
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun setNameSearchQuery(query: String) {
+        _nameSearchQuery.value = query
+    }
+
+    fun searchByName() {
+        val query = _nameSearchQuery.value.trim()
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            _nameSearchState.value = UiState.Loading
+            try {
+                val stations = repository.searchStationsByName(query)
+                _nameSearchState.value = UiState.Success(stations)
+            } catch (e: Exception) {
+                _nameSearchState.value = UiState.Error(e.message ?: "Erreur inconnue")
+            }
+        }
+    }
+
+    fun clearNameSearch() {
+        _nameSearchQuery.value = ""
+        _nameSearchState.value = null
+    }
+
+    fun setTagSearchQuery(query: String) {
+        _tagSearchQuery.value = query
+        tagSuggestionsJob?.cancel()
+        _tagSuggestions.value = emptyList()
+        if (query.length < 3) {
+            // nothing
+        } else {
+            tagSuggestionsJob = viewModelScope.launch {
+                delay(300)
+                try {
+                    _tagSuggestions.value = repository.getTagSuggestions(query)
+                } catch (_: Exception) {
+                    _tagSuggestions.value = emptyList()
+                }
+            }
+        }
+    }
+
+    fun searchByTag(tag: String) {
+        _tagSearchQuery.value = tag
+        _tagSuggestions.value = emptyList()
+        viewModelScope.launch {
+            _tagSearchState.value = UiState.Loading
+            try {
+                val stations = repository.getStationsByTag(tag)
+                _tagSearchState.value = UiState.Success(stations)
+            } catch (e: Exception) {
+                _tagSearchState.value = UiState.Error(e.message ?: "Erreur inconnue")
+            }
+        }
+    }
+
+    fun clearTagSearch() {
+        _tagSearchQuery.value = ""
+        _tagSuggestions.value = emptyList()
+        _tagSearchState.value = null
     }
 
     fun addFavorite(station: RadioStation, position: Int, onDone: () -> Unit) {
