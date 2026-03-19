@@ -1,9 +1,9 @@
 # CarRadio — Specification Technique
 
-**Version :** 1.0  
-**Date :** 2026-03-19  
-**Plateforme cible :** Android (API 26+, Android 8.0 Oreo minimum)  
-**Langage :** Kotlin  
+**Version :** 1.7 (FEAT-002/003/004/005/006/007)
+**Date :** 2026-03-20
+**Plateforme cible :** Android (API 26+, Android 8.0 Oreo minimum)
+**Langage :** Kotlin
 **Architecture :** MVVM + Repository pattern
 
 ---
@@ -32,7 +32,7 @@ CarRadio est une application Android de streaming radio internet conçue pour un
 
 ### Principe de fonctionnement
 
-- L'utilisateur configure jusqu'à **16 stations favorites**, réparties sur **2 pages** de **8 tuiles** chacune (2 colonnes × 4 lignes).
+- L'utilisateur configure jusqu'à **32 stations favorites**, réparties sur **4 pages** de **8 tuiles** chacune (2 colonnes × 4 lignes).
 - On passe d'une page à l'autre par un **swipe horizontal**.
 - Un tap sur une tuile lance la lecture de la station. Un second tap sur la même tuile la met en pause.
 - Les stations favorites sont choisies via un **écran de paramètres** qui exploite la **Radio Browser API** (base de données mondiale, gratuite et open source).
@@ -48,7 +48,7 @@ CarRadio est une application Android de streaming radio internet conçue pour un
 | Navigation | Navigation Compose |
 | Lecteur audio | AndroidX Media3 (ExoPlayer) |
 | Requêtes réseau | Retrofit 2 + OkHttp |
-| Sérialisation JSON | Kotlinx Serialization ou Gson |
+| Sérialisation JSON | Gson |
 | Persistance | Room Database |
 | Injection de dépendances | Hilt |
 | Images (logos) | Coil |
@@ -71,11 +71,11 @@ implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 // Room
 implementation("androidx.room:room-runtime:2.6.1")
 implementation("androidx.room:room-ktx:2.6.1")
-kapt("androidx.room:room-compiler:2.6.1")
+ksp("androidx.room:room-compiler:2.6.1")
 
 // Hilt
 implementation("com.google.dagger:hilt-android:2.51")
-kapt("com.google.dagger:hilt-compiler:2.51")
+ksp("com.google.dagger:hilt-compiler:2.51")
 
 // Coil
 implementation("io.coil-kt:coil-compose:2.6.0")
@@ -84,7 +84,8 @@ implementation("io.coil-kt:coil-compose:2.6.0")
 implementation(platform("androidx.compose:compose-bom:2024.04.00"))
 implementation("androidx.compose.ui:ui")
 implementation("androidx.compose.material3:material3")
-implementation("androidx.compose.foundation:foundation") // Pager / swipe
+implementation("androidx.compose.material:material-icons-extended")
+implementation("androidx.compose.foundation:foundation")
 implementation("androidx.navigation:navigation-compose:2.7.7")
 implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 ```
@@ -125,7 +126,24 @@ Trier par `clickcount` (nombre de lectures) et non par `votes` — reflète mieu
 
 #### Rechercher par nom de pays (alternative)
 ```
-GET /json/stations/bycountryexact/{countryName}?order=votes&reverse=true&hidebroken=true&limit=200
+GET /json/stations/bycountryexact/{countryName}?order=clickcount&reverse=true&hidebroken=true&limit=200
+```
+
+#### Rechercher des stations par nom
+```
+GET /json/stations/search?name=XXXX&order=clickcount&reverse=true&hidebroken=true&limit=30
+```
+Limite à 30 résultats. Utilisé dans `CountryPickerScreen` section "Recherche par nom".
+
+#### Suggestions de tags (auto-complétion)
+```
+GET /json/tags/{searchTerm}?order=stationcount&reverse=true&hidebroken=true&limit=10
+```
+Le filtre est un **path parameter** (pas un query param `name`). Déclenché après 3 caractères minimum, avec debounce 300ms.
+
+#### Stations par tag
+```
+GET /json/stations/search?tag=TAG&order=clickcount&reverse=true&hidebroken=true&limit=50
 ```
 
 #### Notifier un clic (bonne pratique API)
@@ -146,6 +164,7 @@ GET /json/url/{stationuuid}
   "tags": "news,talk,france",
   "country": "France",
   "countrycode": "FR",
+  "state": "Île-de-France",
   "language": "french",
   "codec": "MP3",
   "bitrate": 128,
@@ -154,6 +173,8 @@ GET /json/url/{stationuuid}
   "votes": 1500
 }
 ```
+
+Note : `state` (subdivision/région) et `language` sont parfois absents — traiter comme chaîne vide.
 
 ### Headers HTTP requis
 
@@ -175,6 +196,9 @@ data class RadioStation(
     val faviconUrl: String?,
     val country: String,
     val countryCode: String,
+    val subdivision: String = "",   // champ "state" de l'API (région/état)
+    val languages: String = "",     // champ "language" de l'API
+    val tags: String = "",          // tags séparés par virgules
     val codec: String,          // "MP3", "AAC", "HLS"
     val bitrate: Int,
     val isHls: Boolean,
@@ -196,15 +220,17 @@ data class FavoriteStation(
     val codec: String,
     val bitrate: Int,
     val isHls: Boolean,
-    val position: Int,          // 0-15 : position dans la grille (page 0-1, slot 0-7)
+    val position: Int,          // 0-31 : position dans la grille (4 pages × 8 slots)
     val addedAt: Long = System.currentTimeMillis()
 )
 ```
 
 La **position** encode l'emplacement dans la grille :
-- Positions 0–7 → Page 1 (slots 0 à 7)
-- Positions 8–15 → Page 2 (slots 0 à 7)
-- Maximum : 16 favoris au total (2 pages × 8 tuiles)
+- Positions 0–7 → Page 1
+- Positions 8–15 → Page 2
+- Positions 16–23 → Page 3
+- Positions 24–31 → Page 4
+- Maximum : **32 favoris** au total (4 pages × 8 tuiles)
 
 ### `Country` (modèle API)
 
@@ -213,6 +239,15 @@ data class Country(
     val name: String,
     val iso: String,            // code ISO 3166-1 alpha-2
     val stationCount: Int
+)
+```
+
+### `TagDto` (DTO auto-complétion tags)
+
+```kotlin
+data class TagDto(
+    @SerializedName("name") val name: String,
+    @SerializedName("stationcount") val stationCount: Int
 )
 ```
 
@@ -243,7 +278,7 @@ app/
 │   ├── navigation/
 │   │   └── NavGraph.kt
 │   ├── home/
-│   │   ├── HomeScreen.kt               // Écran principal (2 pages swipables)
+│   │   ├── HomeScreen.kt               // Écran principal (4 pages swipables)
 │   │   ├── HomeViewModel.kt
 │   │   ├── RadioTile.kt                // Composant tuile
 │   │   └── NowPlayingBar.kt            // Barre "en cours de lecture"
@@ -251,9 +286,9 @@ app/
 │   │   ├── SettingsScreen.kt           // Menu paramètres
 │   │   └── SettingsViewModel.kt
 │   └── favorites/
-│       ├── FavoritesPickerScreen.kt    // Choisir ses favoris
-│       ├── CountryPickerScreen.kt      // Étape 1 : choisir un pays
-│       ├── StationListScreen.kt        // Étape 2 : choisir une station
+│       ├── FavoritesPickerScreen.kt    // Gestion des favoris (réorganisation)
+│       ├── CountryPickerScreen.kt      // Recherche par nom / tag / pays
+│       ├── StationListScreen.kt        // Liste des stations d'un pays
 │       └── FavoritesViewModel.kt
 ├── player/
 │   ├── RadioPlayerService.kt           // MediaSessionService (background)
@@ -272,23 +307,25 @@ app/
 
 ```
 HomeScreen
-    └── (FAB ou icône ⚙️) → SettingsScreen
-                                └── "Gérer mes favoris" → FavoritesPickerScreen
-                                                              └── CountryPickerScreen
-                                                                      └── StationListScreen
+    └── (icône ⚙️) → SettingsScreen
+                        └── "Gérer mes favoris" → FavoritesPickerScreen
+                                                      ├── (slot vide) → CountryPickerScreen
+                                                      │                     ├── (résultat nom/tag) → retour direct FavoritesPickerScreen
+                                                      │                     └── (pays) → StationListScreen → retour FavoritesPickerScreen
+                                                      └── (appui long slot rempli) → réorganisation in-place
 ```
 
 ---
 
 ### 6.2 HomeScreen — Écran principal
 
-**Description :** Écran plein écran avec un `HorizontalPager` (2 pages). Chaque page affiche une grille 2 × 4 de tuiles radio.
+**Description :** Écran plein écran avec un `HorizontalPager` (4 pages). Chaque page affiche une grille 2 × 4 de tuiles radio.
 
 **Layout :**
 
 ```
 ┌─────────────────────────────────┐
-│  CarRadio          [⚙️]  [■/▶]  │  ← TopAppBar
+│  CarRadio          [⚙️]  [■]    │  ← TopAppBar
 ├─────────────────────────────────┤
 │                                 │
 │  ┌──────────┐  ┌──────────┐    │
@@ -296,18 +333,9 @@ HomeScreen
 │  │France    │  │RTL       │    │
 │  │Inter     │  │          │    │
 │  └──────────┘  └──────────┘    │
+│         ...           ...       │
 │                                 │
-│  ┌──────────┐  ┌──────────┐    │
-│  │  [logo]  │  │  [logo]  │    │
-│  │  Europe 1│  │  RFI     │    │
-│  └──────────┘  └──────────┘    │
-│       ...           ...         │
-│  ┌──────────┐  ┌──────────┐    │
-│  │          │  │          │    │
-│  │ (vide)   │  │ (vide)   │    │
-│  └──────────┘  └──────────┘    │
-│                                 │
-│       ●  ○   ← indicateur page  │
+│       ● ● ○ ○  ← indicateur    │
 ├─────────────────────────────────┤
 │  ▶ France Inter — En direct     │  ← NowPlayingBar
 └─────────────────────────────────┘
@@ -328,11 +356,11 @@ HomeScreen
 **TopAppBar :**
 - Titre : "CarRadio"
 - Icône `⚙️` → navigue vers `SettingsScreen`
-- Icône ▶/■ (play/stop global) → arrête la lecture en cours
+- Icône ■ (stop) → arrête la lecture en cours (visible uniquement si une station est chargée)
 
-**Indicateur de page :** Deux points (●○) centrés en bas du pager.
+**Indicateur de page :** Quatre points (● ● ○ ○) centrés en bas du pager.
 
-**NowPlayingBar :** Barre fixe en bas de l'écran (au-dessus de la nav bar système), visible uniquement quand une station est chargée. Affiche :
+**NowPlayingBar :** Barre fixe en bas de l'écran, visible uniquement quand une station est chargée. Affiche :
 - Icône play/pause
 - Nom de la station
 - Indicateur de buffering si applicable
@@ -347,7 +375,7 @@ HomeScreen
 
 - Section **"Mes favoris"**
   - Entrée : "Gérer mes favoris" → `FavoritesPickerScreen`
-  - Sous-texte : "X/16 stations configurées"
+  - Sous-texte : "X/32 stations configurées"
 
 - Section **"Lecture"**
   - Toggle : "Continuer la lecture quand l'app est en arrière-plan" (défaut : activé)
@@ -364,67 +392,83 @@ HomeScreen
 
 ### 6.4 FavoritesPickerScreen — Gestion des favoris
 
-**Description :** Écran de gestion permettant de visualiser les 16 slots et de modifier chaque favori.
+**Description :** Écran de gestion permettant de visualiser les 32 slots (4 pages × 8), modifier chaque favori, et réorganiser leur ordre.
 
 **Layout :**
 
 ```
-┌─────────────────────────────────┐
-│  ← Mes favoris                  │
-├─────────────────────────────────┤
-│  Page 1                         │
-│  ┌────┐ ┌────┐ ┌────┐ ┌────┐   │
-│  │ 1  │ │ 2  │ │ 3  │ │ 4  │   │  ← rangée de 4 mini-tuiles
-│  └────┘ └────┘ └────┘ └────┘   │
-│  ┌────┐ ┌────┐ ┌────┐ ┌────┐   │
-│  │ 5  │ │ 6  │ │ 7  │ │ 8  │   │
-│  └────┘ └────┘ └────┘ └────┘   │
-│  Page 2                         │
-│  ┌────┐ ┌────┐ ...              │
-│                                 │
-└─────────────────────────────────┘
+┌─────────────────────────────────────┐
+│  ← Mes favoris              [🗑️]    │  ← poubelle visible si tuile sélectionnée
+├─────────────────────────────────────┤
+│  Appui long pour déplacer/supprimer │  ← label d'aide
+│  Page 1                             │
+│  ┌──────────┐  ┌──────────┐        │
+│  │ France   │  │  RTL     │        │
+│  │ Inter    │  │          │        │
+│  └──────────┘  └──────────┘        │
+│  ┌──────────┐  ┌──────────┐        │
+│  │  Europe 1│  │  [+]     │        │
+│  └──────────┘  └──────────┘        │
+│  ...                                │
+│  Page 2                             │
+│  ...                                │
+│  Page 3 / Page 4                    │
+└─────────────────────────────────────┘
 ```
 
-- **Tap sur un slot rempli** : ouvre un dialogue avec options "Modifier" / "Supprimer"
-- **Tap sur un slot vide** : navigue vers `CountryPickerScreen` avec le numéro de slot en paramètre
+**Interactions :**
+
+- **Tap sur un slot vide** → navigue vers `CountryPickerScreen` avec le numéro de slot
+- **Tap sur un slot rempli** (sans sélection en cours) → dialogue "Modifier" / "Supprimer"
+- **Appui long sur un slot rempli** → slot "sélectionné" (bordure couleur primaire, légèrement agrandi, fond primaryContainer)
+- **Tap sur un autre slot** (quand un slot est sélectionné) → les deux slots échangent leurs positions (`swapFavorites`). Fonctionne entre pages.
+- **Tap sur le slot sélectionné** → désélection
+- **Icône poubelle dans TopAppBar** (visible uniquement si slot sélectionné) → supprime le favori du slot sélectionné
 
 ---
 
-### 6.5 CountryPickerScreen — Choix du pays
+### 6.5 CountryPickerScreen — Recherche de station
 
-**Description :** Liste des pays disponibles, chargée depuis Radio Browser API.
+**Description :** Écran de recherche de station en trois sections, dans un `LazyColumn` scrollable.
 
-**Comportement :**
-- Chargement de la liste des pays au premier affichage (avec indicateur de chargement)
-- Mise en cache locale (Room ou SharedPreferences) pendant 24h pour éviter des appels répétés
-- Liste triée alphabétiquement
-- Barre de recherche en haut pour filtrer
-- Chaque entrée affiche : nom du pays + nombre de stations disponibles
-- **Tap sur un pays** → navigue vers `StationListScreen` avec le pays sélectionné
+#### Section 1 — Recherche par nom
+- Champ texte avec `ImeAction.Search`
+- Sur appui Retour clavier → requête `searchStationsByName(query)`, limite 30 résultats
+- Résultats affichés inline : nom, codec · bitrate · région · pays · langue
+- Tap sur une station → ajout au slot + retour direct à `FavoritesPickerScreen`
+- Bouton "Effacer" pour réinitialiser
 
-**Pays mis en avant (en haut de liste, avant le tri alphabétique) :**
-- France 🇫🇷
-- Suisse 🇨🇭
-- Belgique 🇧🇪
-- Canada 🇨🇦
+#### Section 2 — Recherche par tag
+- Champ texte avec auto-complétion (`ExposedDropdownMenuBox`)
+- Auto-complétion déclenchée après **3 caractères minimum**, avec debounce 300ms
+- Requête : `GET /json/tags/{searchTerm}?order=stationcount&reverse=true&limit=10`
+- Sélection d'un tag dans le dropdown → ou appui Retour clavier → requête `getStationsByTag(tag)`, limite 50 résultats
+- Résultats affichés : nom, pays, tags (3 premiers)
+- Tap sur une station → ajout au slot + retour direct à `FavoritesPickerScreen`
+
+#### Section 3 — Recherche par pays
+- Champ texte pour filtrer la liste des pays
+- **Pays mis en avant** (hors filtre) : France, Suisse, Belgique, Canada
+- Liste complète alphabétique ensuite
+- Chaque entrée : nom du pays + nombre de stations
+- Cache 24h (Room `countries_cache`)
+- Tap sur un pays → navigue vers `StationListScreen`
 
 ---
 
-### 6.6 StationListScreen — Choix d'une station
+### 6.6 StationListScreen — Choix d'une station par pays
 
-**Description :** Liste des stations d'un pays, triée par popularité (votes).
+**Description :** Liste des stations d'un pays, triée par popularité.
 
 **Comportement :**
 - Affiche le nom du pays dans la TopAppBar (bouton retour)
-- Chargement paginé si nécessaire (limit=200 par défaut)
+- Requête : `GET /json/stations/search?countrycode=XX&order=clickcount&reverse=true&hidebroken=true&limit=200`
 - Barre de recherche pour filtrer par nom
 - Chaque entrée affiche :
   - Logo de la station (Coil, 48dp)
   - Nom de la station
-  - Tags / genre (sous le nom, en petit)
-  - Codec + bitrate (ex: "MP3 · 128k")
-  - Indicateur de validité (`lastcheckok`)
-- **Tap sur une station** : ajoute la station au slot sélectionné, retourne à `FavoritesPickerScreen` avec confirmation toast
+  - Codec · bitrate · région (`state`) · pays · langue (`language`) en supporting text (champs vides omis)
+- **Tap sur une station** → ajoute au slot sélectionné, retourne à `FavoritesPickerScreen`
 
 ---
 
@@ -519,11 +563,12 @@ enum class PlayerState {
 
 ```kotlin
 @Database(
-    entities = [FavoriteStation::class],
+    entities = [FavoriteStation::class, CountryCache::class],
     version = 1
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
+    abstract fun countryCacheDao(): CountryCacheDao
 }
 ```
 
@@ -546,6 +591,12 @@ interface FavoriteDao {
 
     @Query("SELECT COUNT(*) FROM favorites")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM favorites WHERE position = :position LIMIT 1")
+    suspend fun getAtPosition(position: Int): FavoriteStation?
+
+    @Query("UPDATE favorites SET position = :newPosition WHERE uuid = :uuid")
+    suspend fun updatePosition(uuid: String, newPosition: Int)
 }
 ```
 
@@ -556,10 +607,10 @@ Stocker la liste des pays dans une table Room `countries_cache` avec un timestam
 ```kotlin
 @Entity(tableName = "countries_cache")
 data class CountryCache(
-    @PrimaryKey val iso: String,      // code ISO 3166-1 alpha-2
+    @PrimaryKey val iso: String,
     val name: String,
     val stationCount: Int,
-    val lastFetchedAt: Long           // epoch millis, invalidé après 24h
+    val lastFetchedAt: Long
 )
 ```
 
@@ -591,7 +642,6 @@ Gérer l'audio focus Android pour :
 - Reprendre après la fin de l'appel
 
 ```kotlin
-// Media3 gère automatiquement l'audio focus si configuré :
 ExoPlayer.Builder(context)
     .setAudioAttributes(
         AudioAttributes.Builder()
@@ -602,10 +652,6 @@ ExoPlayer.Builder(context)
     )
     .build()
 ```
-
-### Android Auto (optionnel — évolution future)
-
-L'architecture MediaSessionService est compatible avec Android Auto. Voir section 13.
 
 ---
 
@@ -626,22 +672,19 @@ L'architecture MediaSessionService est compatible avec Android Auto. Voir sectio
 ### `AndroidManifest.xml`
 
 ```xml
-<!-- Accès internet obligatoire -->
 <uses-permission android:name="android.permission.INTERNET" />
-
-<!-- Vérification connectivité -->
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-<!-- Maintenir le CPU actif pendant la lecture en background -->
 <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-<!-- Notification de lecture (Android 13+) -->
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-<!-- Service de lecture en arrière-plan -->
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 ```
+
+Attributs application :
+- `android:icon="@mipmap/ic_launcher"`
+- `android:roundIcon="@mipmap/ic_launcher_round"`
+- `android:networkSecurityConfig="@xml/network_security_config"` — permet HTTP cleartext (streams radio)
+- `android:usesCleartextTraffic="true"`
 
 ### Déclaration du service
 
@@ -666,7 +709,7 @@ CarRadio/
 │   ├── src/main/
 │   │   ├── AndroidManifest.xml
 │   │   ├── java/com/carradio/
-│   │   │   ├── CarRadioApplication.kt      // @HiltAndroidApp
+│   │   │   ├── CarRadioApplication.kt
 │   │   │   ├── MainActivity.kt
 │   │   │   ├── data/
 │   │   │   │   ├── api/
@@ -674,11 +717,14 @@ CarRadio/
 │   │   │   │   │   ├── RadioBrowserService.kt
 │   │   │   │   │   └── dto/
 │   │   │   │   │       ├── StationDto.kt
-│   │   │   │   │       └── CountryDto.kt
+│   │   │   │   │       ├── CountryDto.kt
+│   │   │   │   │       └── TagDto.kt
 │   │   │   │   ├── db/
 │   │   │   │   │   ├── AppDatabase.kt
 │   │   │   │   │   ├── FavoriteDao.kt
-│   │   │   │   │   └── FavoriteStation.kt
+│   │   │   │   │   ├── FavoriteStation.kt
+│   │   │   │   │   ├── CountryCacheDao.kt
+│   │   │   │   │   └── CountryCache.kt
 │   │   │   │   └── repository/
 │   │   │   │       ├── RadioRepository.kt
 │   │   │   │       └── RadioRepositoryImpl.kt
@@ -687,8 +733,7 @@ CarRadio/
 │   │   │   │       ├── RadioStation.kt
 │   │   │   │       └── Country.kt
 │   │   │   ├── ui/
-│   │   │   │   ├── navigation/
-│   │   │   │   │   └── NavGraph.kt
+│   │   │   │   ├── navigation/NavGraph.kt
 │   │   │   │   ├── home/
 │   │   │   │   │   ├── HomeScreen.kt
 │   │   │   │   │   ├── HomeViewModel.kt
@@ -715,12 +760,23 @@ CarRadio/
 │   │       │   ├── colors.xml
 │   │       │   └── themes.xml
 │   │       ├── drawable/
-│   │       │   └── ic_radio_placeholder.xml
-│   │       └── xml/
-│   │           └── network_security_config.xml
+│   │       ├── xml/
+│   │       │   └── network_security_config.xml
+│   │       ├── mipmap-mdpi/ic_launcher.png + ic_launcher_round.png
+│   │       ├── mipmap-hdpi/
+│   │       ├── mipmap-xhdpi/
+│   │       ├── mipmap-xxhdpi/
+│   │       └── mipmap-xxxhdpi/
 │   └── build.gradle.kts
 ├── build.gradle.kts
-└── settings.gradle.kts
+├── settings.gradle.kts
+├── gradle/libs.versions.toml
+├── gradle.properties               (JAVA_HOME = Android Studio JBR)
+└── docs/
+    ├── specs/carradio-spec.md      (ce fichier)
+    ├── specs/FEAT-*.md
+    ├── bugs/BUG-*.md
+    └── tasks/TASKS.md
 ```
 
 ---
@@ -731,8 +787,6 @@ Ces fonctionnalités sont hors scope v1 mais l'architecture doit les permettre s
 
 - **Android Auto** : Le `MediaSessionService` est déjà compatible. Ajouter `androidx.car.app` et une `CarAppService`.
 - **Widget écran d'accueil** : Widget 4×2 avec play/pause et nom de la station active.
-- **Radios d'autres pays** : Déjà supporté par l'architecture (Radio Browser couvre 200+ pays).
-- **Recherche globale** : Recherche par nom de station sans filtre pays.
 - **Égaliseur** : Via `ExoPlayer` audio effects.
 - **Thème sombre / clair** : Déjà prévu via Material3.
 - **Export/import des favoris** : Sérialisation JSON des favoris pour backup.
@@ -750,6 +804,15 @@ Ne jamais appeler `startForegroundService()` de façon préventive. Appeler uniq
 **BUG-002 — HTTP cleartext**
 Les streams Radio Browser utilisent fréquemment `http://`. Toujours déclarer `android:usesCleartextTraffic="true"` et un `network_security_config.xml` avec `cleartextTrafficPermitted="true"`.
 
+**BUG-003 — Tri des stations**
+Utiliser `order=clickcount` (pas `order=votes`). Le tri par votes exclut des stations populaires qui ont peu de votes mais beaucoup de lectures effectives.
+
+**FEAT-003 — Champs API nullable**
+Les champs `state`, `language`, `tags` de l'API Radio Browser sont souvent absents du JSON. Toujours les déclarer `String?` dans le DTO et utiliser `?: ""` dans `toDomain()`. Les champs `String = ""` dans un `data class` Kotlin ne sont PAS respectés par Gson lors de la désérialisation — Gson met `null` si le champ est absent.
+
+**FEAT-004 — Tags API endpoint**
+Le filtre de tags utilise un **path parameter** : `/json/tags/{searchTerm}` et non un query param `?name=`. Un query param `name` est ignoré par l'API et retourne le top global.
+
 ### Architecture PlayerController
 `PlayerController` est un singleton Hilt qui crée son propre `ExoPlayer` en lazy init (sur le main thread). `RadioPlayerService` injecte `PlayerController` et wrape le même player dans une `MediaSession`. Pas de `init()` externe — le player est prêt dès le premier accès à `playerController.player`.
 
@@ -766,14 +829,28 @@ Les streams Radio Browser utilisent fréquemment `http://`. Toujours déclarer `
 
 ```bash
 curl -H "User-Agent: CarRadio/1.0" \
-  "https://de1.api.radio-browser.info/json/stations/search?countrycode=FR&order=votes&reverse=true&hidebroken=true&limit=100"
+  "https://de1.api.radio-browser.info/json/stations/search?countrycode=FR&order=clickcount&reverse=true&hidebroken=true&limit=200"
 ```
 
-### Récupérer les radios suisses
+### Rechercher une station par nom
 
 ```bash
 curl -H "User-Agent: CarRadio/1.0" \
-  "https://de1.api.radio-browser.info/json/stations/search?countrycode=CH&order=votes&reverse=true&hidebroken=true&limit=100"
+  "https://de1.api.radio-browser.info/json/stations/search?name=rire&order=clickcount&reverse=true&hidebroken=true&limit=30"
+```
+
+### Suggestions de tags
+
+```bash
+curl -H "User-Agent: CarRadio/1.0" \
+  "https://de1.api.radio-browser.info/json/tags/rock?order=stationcount&reverse=true&limit=10"
+```
+
+### Stations par tag
+
+```bash
+curl -H "User-Agent: CarRadio/1.0" \
+  "https://de1.api.radio-browser.info/json/stations/search?tag=rock&order=clickcount&reverse=true&hidebroken=true&limit=50"
 ```
 
 ### Notifier un clic avant lecture
@@ -792,4 +869,4 @@ curl -H "User-Agent: CarRadio/1.0" \
 
 ---
 
-*Document généré pour Claude Code — CarRadio v1.0*
+*Document maintenu pour Claude Code — CarRadio v1.7*
