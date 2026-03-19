@@ -38,6 +38,13 @@ class RadioRepositoryImpl @Inject constructor(
         favoriteDao.deleteAtPosition(position)
     }
 
+    override suspend fun swapFavorites(fromPosition: Int, toPosition: Int) {
+        val from = favoriteDao.getAtPosition(fromPosition) ?: return
+        val to = favoriteDao.getAtPosition(toPosition)
+        favoriteDao.updatePosition(from.uuid, toPosition)
+        if (to != null) favoriteDao.updatePosition(to.uuid, fromPosition)
+    }
+
     override suspend fun getFavoritesCount(): Int =
         favoriteDao.count()
 

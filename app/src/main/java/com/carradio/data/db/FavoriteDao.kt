@@ -23,4 +23,7 @@ interface FavoriteDao {
 
     @Query("SELECT * FROM favorites WHERE position = :position LIMIT 1")
     suspend fun getAtPosition(position: Int): FavoriteStation?
+
+    @Query("UPDATE favorites SET position = :newPosition WHERE uuid = :uuid")
+    suspend fun updatePosition(uuid: String, newPosition: Int)
 }

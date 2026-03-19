@@ -10,6 +10,7 @@ interface RadioRepository {
     suspend fun addFavorite(station: RadioStation, position: Int)
     suspend fun removeFavorite(uuid: String)
     suspend fun removeAtPosition(position: Int)
+    suspend fun swapFavorites(fromPosition: Int, toPosition: Int)
     suspend fun getFavoritesCount(): Int
     suspend fun getCountries(): List<Country>
     suspend fun getStationsByCountryCode(countryCode: String): List<RadioStation>

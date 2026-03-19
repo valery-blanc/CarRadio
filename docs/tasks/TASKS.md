@@ -84,3 +84,15 @@
 - [x] Icônes générées pour toutes densités (mdpi→xxxhdpi) via ImageMagick
 - [x] `AndroidManifest.xml` : `android:icon` et `android:roundIcon` ajoutés
 - [x] Testé et confirmé par l'utilisateur
+
+## FEAT-006 : 4 pages de favoris
+- [x] `HomeScreen.kt` : pageCount 2→4, slots 16→32, indicateur 4 points
+- [x] `FavoritesPickerScreen.kt` : repeat(2)→repeat(4)
+- [x] Testé et confirmé par l'utilisateur
+
+## FEAT-007 : Réorganisation des favoris par appui long
+- [x] `FavoriteDao.kt` : ajout `updatePosition(uuid, newPosition)`
+- [x] `RadioRepository` + `RadioRepositoryImpl` : ajout `swapFavorites(from, to)`
+- [x] `FavoritesViewModel` : ajout `swapFavorites(from, to)`
+- [x] `FavoritesPickerScreen` : appui long → sélection, tap → swap, poubelle dans TopAppBar, label info
+- [x] Testé et confirmé par l'utilisateur

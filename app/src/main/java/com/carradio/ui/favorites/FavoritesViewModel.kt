@@ -167,4 +167,10 @@ class FavoritesViewModel @Inject constructor(
             repository.removeAtPosition(position)
         }
     }
+
+    fun swapFavorites(from: Int, to: Int) {
+        viewModelScope.launch {
+            repository.swapFavorites(from, to)
+        }
+    }
 }

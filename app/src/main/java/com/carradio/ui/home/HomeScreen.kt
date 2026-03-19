@@ -27,12 +27,12 @@ fun HomeScreen(
     val playerState by viewModel.playerState.collectAsState()
     val currentStation by viewModel.currentStation.collectAsState()
 
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
 
-    // Build a 16-slot grid: nulls for empty slots
+    // Build a 32-slot grid: nulls for empty slots
     val slots: List<FavoriteStation?> = remember(favorites) {
         val map = favorites.associateBy { it.position }
-        (0 until 16).map { map[it] }
+        (0 until 32).map { map[it] }
     }
 
     Scaffold(
@@ -95,7 +95,7 @@ fun HomeScreen(
                     .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                repeat(2) { index ->
+                repeat(4) { index ->
                     val selected = pagerState.currentPage == index
                     Box(
                         modifier = Modifier

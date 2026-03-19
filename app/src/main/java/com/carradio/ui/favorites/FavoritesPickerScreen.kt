@@ -1,9 +1,11 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class)
 package com.carradio.ui.favorites
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,12 +20,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+
+private const val PAGES = 4
+private const val SLOTS_PER_PAGE = 8
+private const val TOTAL_SLOTS = PAGES * SLOTS_PER_PAGE
 
 @Composable
 fun FavoritesPickerScreen(
@@ -35,6 +42,7 @@ fun FavoritesPickerScreen(
     val slotsMap = favorites.associateBy { it.position }
 
     var dialogSlot by remember { mutableStateOf<Int?>(null) }
+    var selectedPosition by remember { mutableStateOf<Int?>(null) }
 
     Scaffold(
         topBar = {
@@ -43,6 +51,16 @@ fun FavoritesPickerScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                    }
+                },
+                actions = {
+                    if (selectedPosition != null) {
+                        IconButton(onClick = {
+                            viewModel.removeAtPosition(selectedPosition!!)
+                            selectedPosition = null
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Supprimer")
+                        }
                     }
                 }
             )
@@ -56,7 +74,13 @@ fun FavoritesPickerScreen(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            repeat(2) { page ->
+            Text(
+                text = "Appui long pour déplacer / supprimer",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            repeat(PAGES) { page ->
                 Text(
                     text = "Page ${page + 1}",
                     style = MaterialTheme.typography.titleSmall,
@@ -72,15 +96,34 @@ fun FavoritesPickerScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             repeat(4) { row ->
-                                val position = page * 8 + row * 2 + col
+                                val position = page * SLOTS_PER_PAGE + row * 2 + col
                                 val station = slotsMap[position]
+                                val isSelected = selectedPosition == position
                                 MiniSlot(
-                                    position = position,
                                     stationName = station?.name,
                                     faviconUrl = station?.faviconUrl,
+                                    isSelected = isSelected,
                                     onClick = {
-                                        if (station != null) dialogSlot = position
-                                        else onAddFavorite(position)
+                                        when {
+                                            // A tile is held: perform swap/move
+                                            selectedPosition != null -> {
+                                                val from = selectedPosition!!
+                                                if (from != position) {
+                                                    viewModel.swapFavorites(from, position)
+                                                }
+                                                selectedPosition = null
+                                            }
+                                            // Tap on filled slot: open dialog
+                                            station != null -> dialogSlot = position
+                                            // Tap on empty slot: add favorite
+                                            else -> onAddFavorite(position)
+                                        }
+                                    },
+                                    onLongClick = {
+                                        if (station != null) {
+                                            selectedPosition =
+                                                if (selectedPosition == position) null else position
+                                        }
                                     }
                                 )
                             }
@@ -125,23 +168,31 @@ fun FavoritesPickerScreen(
 
 @Composable
 private fun MiniSlot(
-    position: Int,
     stationName: String?,
     faviconUrl: String?,
-    onClick: () -> Unit
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
+    val borderColor = if (isSelected)
+        MaterialTheme.colorScheme.primary
+    else
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+    val borderWidth = if (isSelected) 2.dp else 1.dp
+    val scale = if (isSelected) 1.04f else 1f
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
+            .scale(scale)
             .clip(RoundedCornerShape(8.dp))
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                RoundedCornerShape(8.dp)
+            .border(borderWidth, borderColor, RoundedCornerShape(8.dp))
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                else MaterialTheme.colorScheme.surface
             )
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable { onClick() }
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -158,7 +209,9 @@ private fun MiniSlot(
                     AsyncImage(
                         model = faviconUrl,
                         contentDescription = null,
-                        modifier = Modifier.size(28.dp).clip(RoundedCornerShape(4.dp)),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(4.dp)),
                         contentScale = ContentScale.Fit
                     )
                     Spacer(Modifier.width(6.dp))
