@@ -22,11 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.carradio.R
 
 private const val PAGES = 4
 private const val SLOTS_PER_PAGE = 8
@@ -47,10 +49,11 @@ fun FavoritesPickerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mes favoris") },
+                title = { Text(stringResource(R.string.my_favorites)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -59,7 +62,8 @@ fun FavoritesPickerScreen(
                             viewModel.removeAtPosition(selectedPosition!!)
                             selectedPosition = null
                         }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Supprimer")
+                            Icon(Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.delete))
                         }
                     }
                 }
@@ -75,14 +79,14 @@ fun FavoritesPickerScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Appui long pour déplacer / supprimer",
+                text = stringResource(R.string.favorites_hint),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             repeat(PAGES) { page ->
                 Text(
-                    text = "Page ${page + 1}",
+                    text = stringResource(R.string.page_label, page + 1),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -105,7 +109,6 @@ fun FavoritesPickerScreen(
                                     isSelected = isSelected,
                                     onClick = {
                                         when {
-                                            // A tile is held: perform swap/move
                                             selectedPosition != null -> {
                                                 val from = selectedPosition!!
                                                 if (from != position) {
@@ -113,9 +116,7 @@ fun FavoritesPickerScreen(
                                                 }
                                                 selectedPosition = null
                                             }
-                                            // Tap on filled slot: open dialog
                                             station != null -> dialogSlot = position
-                                            // Tap on empty slot: add favorite
                                             else -> onAddFavorite(position)
                                         }
                                     },
@@ -140,7 +141,7 @@ fun FavoritesPickerScreen(
             AlertDialog(
                 onDismissRequest = { dialogSlot = null },
                 title = { Text(station.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                text = { Text("Que voulez-vous faire avec cette station ?") },
+                text = { Text(stringResource(R.string.station_action_prompt)) },
                 confirmButton = {
                     TextButton(onClick = {
                         dialogSlot = null
@@ -148,7 +149,7 @@ fun FavoritesPickerScreen(
                     }) {
                         Icon(Icons.Default.Edit, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("Modifier")
+                        Text(stringResource(R.string.modify))
                     }
                 },
                 dismissButton = {
@@ -158,7 +159,7 @@ fun FavoritesPickerScreen(
                     }) {
                         Icon(Icons.Default.Delete, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("Supprimer")
+                        Text(stringResource(R.string.delete))
                     }
                 }
             )
@@ -199,7 +200,7 @@ private fun MiniSlot(
         if (stationName == null) {
             Icon(
                 Icons.Default.Add,
-                contentDescription = "Ajouter",
+                contentDescription = stringResource(R.string.add_station),
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                 modifier = Modifier.size(20.dp)
             )

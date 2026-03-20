@@ -37,6 +37,10 @@ class SettingsViewModel @Inject constructor(
         get() = prefs.getString("preferred_quality", "normal") ?: "normal"
         set(value) { prefs.edit().putString("preferred_quality", value).apply() }
 
+    var appLanguage: String
+        get() = prefs.getString("app_language", "en") ?: "en"
+        set(value) { prefs.edit().putString("app_language", value).apply() }
+
     init {
         viewModelScope.launch {
             _favoritesCount.value = repository.getFavoritesCount()

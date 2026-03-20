@@ -13,9 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.filter
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import com.carradio.R
 
 @Composable
 fun SleepTimerScreen(
@@ -30,10 +32,11 @@ fun SleepTimerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Minuteur sommeil") },
+                title = { Text(stringResource(R.string.sleep_timer_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -46,62 +49,33 @@ fun SleepTimerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Wheels row
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                WheelPicker(
-                    count = 24,
-                    selectedIndex = hours,
-                    onIndexSelected = viewModel::setHours,
-                    label = "h"
-                )
-                Text(
-                    text = ":",
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier.padding(bottom = 20.dp)
-                )
-                WheelPicker(
-                    count = 60,
-                    selectedIndex = minutes,
-                    onIndexSelected = viewModel::setMinutes,
-                    label = "min"
-                )
-                Text(
-                    text = ":",
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier.padding(bottom = 20.dp)
-                )
-                WheelPicker(
-                    count = 60,
-                    selectedIndex = seconds,
-                    onIndexSelected = viewModel::setSeconds,
-                    label = "sec"
-                )
+                WheelPicker(count = 24, selectedIndex = hours, onIndexSelected = viewModel::setHours, label = "h")
+                Text(text = ":", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(bottom = 20.dp))
+                WheelPicker(count = 60, selectedIndex = minutes, onIndexSelected = viewModel::setMinutes, label = "min")
+                Text(text = ":", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(bottom = 20.dp))
+                WheelPicker(count = 60, selectedIndex = seconds, onIndexSelected = viewModel::setSeconds, label = "sec")
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Start button
             Button(
                 onClick = { viewModel.startTimer(); onBack() },
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(56.dp)
+                modifier = Modifier.fillMaxWidth(0.6f).height(56.dp)
             ) {
-                Text("Démarrer", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.start), style = MaterialTheme.typography.titleMedium)
             }
 
             if (isRunning) {
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedButton(
                     onClick = viewModel::cancelTimer,
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .height(56.dp)
+                    modifier = Modifier.fillMaxWidth(0.6f).height(56.dp)
                 ) {
-                    Text("Annuler le minuteur", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.cancel_timer), style = MaterialTheme.typography.titleMedium)
                 }
             }
         }
@@ -118,21 +92,17 @@ private fun WheelPicker(
 ) {
     val itemHeightDp = 56.dp
     val visibleCount = 5
-    val halfVisible = visibleCount / 2 // = 2
+    val halfVisible = visibleCount / 2
 
-    // list layout: [halfVisible padding items] [count real items] [halfVisible padding items]
-    // firstVisibleItemIndex == selectedIndex after snapping
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
     val snapBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
-    // Sync external selection to scroll position
     LaunchedEffect(selectedIndex) {
         if (listState.firstVisibleItemIndex != selectedIndex) {
             listState.animateScrollToItem(selectedIndex)
         }
     }
 
-    // Report selection when scroll settles
     LaunchedEffect(Unit) {
         snapshotFlow { listState.isScrollInProgress }
             .filter { !it }
@@ -144,22 +114,14 @@ private fun WheelPicker(
 
     val centerIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        Box(
-            modifier = Modifier
-                .width(80.dp)
-                .height(itemHeightDp * visibleCount)
-        ) {
-            // Center highlight bar
+        Box(modifier = Modifier.width(80.dp).height(itemHeightDp * visibleCount)) {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -175,11 +137,7 @@ private fun WheelPicker(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 userScrollEnabled = true
             ) {
-                // Top padding items
-                items(halfVisible) {
-                    Box(modifier = Modifier.height(itemHeightDp).width(80.dp))
-                }
-                // Real items
+                items(halfVisible) { Box(modifier = Modifier.height(itemHeightDp).width(80.dp)) }
                 items(count) { index ->
                     val isCurrent = index == centerIndex
                     Box(
@@ -195,10 +153,7 @@ private fun WheelPicker(
                         )
                     }
                 }
-                // Bottom padding items
-                items(halfVisible) {
-                    Box(modifier = Modifier.height(itemHeightDp).width(80.dp))
-                }
+                items(halfVisible) { Box(modifier = Modifier.height(itemHeightDp).width(80.dp)) }
             }
         }
     }

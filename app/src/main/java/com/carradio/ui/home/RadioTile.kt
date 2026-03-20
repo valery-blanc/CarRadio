@@ -56,19 +56,12 @@ fun RadioTile(
 
 @Composable
 private fun EmptyTile() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-            imageVector = Icons.Default.Add,
-            contentDescription = "Ajouter",
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-            modifier = Modifier.size(32.dp)
-        )
-        Text(
-            text = "Ajouter",
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-            fontSize = 11.sp
-        )
-    }
+    Icon(
+        imageVector = Icons.Default.Add,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+        modifier = Modifier.size(32.dp)
+    )
 }
 
 @Composable

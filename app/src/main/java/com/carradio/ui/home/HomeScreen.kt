@@ -2,6 +2,7 @@
 package com.carradio.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -17,9 +18,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.carradio.R
 import com.carradio.data.db.FavoriteStation
 import com.carradio.player.PlayerState
 import com.google.android.gms.ads.AdRequest
@@ -56,11 +60,22 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("CarRadio") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.app_name))
+                    }
+                },
                 actions = {
                     if (currentStation != null) {
                         IconButton(onClick = { viewModel.stopPlayback() }) {
-                            Icon(Icons.Default.StopCircle, contentDescription = "Stop")
+                            Icon(Icons.Default.StopCircle,
+                                contentDescription = stringResource(R.string.stop))
                         }
                     }
                     if (isTimerRunning && remainingSeconds != null) {
@@ -72,7 +87,7 @@ fun HomeScreen(
                         ) {
                             Icon(
                                 Icons.Default.Bedtime,
-                                contentDescription = "Minuteur actif",
+                                contentDescription = stringResource(R.string.sleep_timer_active),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -87,11 +102,12 @@ fun HomeScreen(
                     IconButton(onClick = onNavigateToTimer) {
                         Icon(
                             if (isTimerRunning) Icons.Default.HourglassTop else Icons.Default.HourglassEmpty,
-                            contentDescription = "Minuteur"
+                            contentDescription = stringResource(R.string.timer)
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Paramètres")
+                        Icon(Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings))
                     }
                 }
             )
@@ -167,7 +183,7 @@ private fun AdBanner() {
         factory = { ctx ->
             AdView(ctx).apply {
                 // REMPLACER par le vrai Ad Unit ID depuis la console AdMob
-                adUnitId = "ca-app-pub-3940256099942544/6300978111"
+                adUnitId = "ca-app-pub-6625569938836723/3454755420"
                 setAdSize(adSize)
                 loadAd(AdRequest.Builder().build())
             }

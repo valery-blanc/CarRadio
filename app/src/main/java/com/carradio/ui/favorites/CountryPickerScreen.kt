@@ -14,9 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.carradio.R
 import com.carradio.domain.model.RadioStation
 
 @Composable
@@ -46,10 +48,11 @@ fun CountryPickerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ajouter une station") },
+                title = { Text(stringResource(R.string.add_station_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -63,7 +66,7 @@ fun CountryPickerScreen(
             // ── Section 1: Recherche par nom ──────────────────────────────
             item {
                 Text(
-                    "Recherche par nom",
+                    stringResource(R.string.search_by_name),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
@@ -73,7 +76,7 @@ fun CountryPickerScreen(
                 OutlinedTextField(
                     value = nameSearchQuery,
                     onValueChange = { viewModel.setNameSearchQuery(it) },
-                    placeholder = { Text("Nom de la station…") },
+                    placeholder = { Text(stringResource(R.string.station_name_placeholder)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
@@ -86,7 +89,7 @@ fun CountryPickerScreen(
                     trailingIcon = {
                         if (nameSearchQuery.isNotBlank()) {
                             TextButton(onClick = { viewModel.clearNameSearch() }) {
-                                Text("Effacer")
+                                Text(stringResource(R.string.clear))
                             }
                         }
                     }
@@ -111,7 +114,8 @@ fun CountryPickerScreen(
                 is UiState.Success -> {
                     if (ns.data.isEmpty()) {
                         item {
-                            Text("Aucune station trouvée", modifier = Modifier.padding(16.dp),
+                            Text(stringResource(R.string.no_station_found),
+                                modifier = Modifier.padding(16.dp),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
                     } else {
@@ -130,7 +134,7 @@ fun CountryPickerScreen(
             item {
                 HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
                 Text(
-                    "Recherche par tag",
+                    stringResource(R.string.search_by_tag),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
@@ -147,7 +151,7 @@ fun CountryPickerScreen(
                     OutlinedTextField(
                         value = tagSearchQuery,
                         onValueChange = { viewModel.setTagSearchQuery(it) },
-                        placeholder = { Text("Genre musical, style…") },
+                        placeholder = { Text(stringResource(R.string.tag_placeholder)) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -160,7 +164,7 @@ fun CountryPickerScreen(
                         trailingIcon = {
                             if (tagSearchQuery.isNotBlank()) {
                                 TextButton(onClick = { viewModel.clearTagSearch() }) {
-                                    Text("Effacer")
+                                    Text(stringResource(R.string.clear))
                                 }
                             }
                         }
@@ -203,7 +207,8 @@ fun CountryPickerScreen(
                 is UiState.Success -> {
                     if (ts.data.isEmpty()) {
                         item {
-                            Text("Aucune station trouvée", modifier = Modifier.padding(16.dp),
+                            Text(stringResource(R.string.no_station_found),
+                                modifier = Modifier.padding(16.dp),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
                     } else {
@@ -222,7 +227,7 @@ fun CountryPickerScreen(
             item {
                 HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
                 Text(
-                    "Recherche par pays",
+                    stringResource(R.string.search_by_country),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
@@ -232,7 +237,7 @@ fun CountryPickerScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.setSearchQuery(it) },
-                    placeholder = { Text("Filtrer les pays…") },
+                    placeholder = { Text(stringResource(R.string.filter_countries)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
@@ -258,7 +263,9 @@ fun CountryPickerScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(state.message)
                                 Spacer(Modifier.height(8.dp))
-                                Button(onClick = { viewModel.loadCountries() }) { Text("Réessayer") }
+                                Button(onClick = { viewModel.loadCountries() }) {
+                                    Text(stringResource(R.string.retry))
+                                }
                             }
                         }
                     }
@@ -277,20 +284,24 @@ fun CountryPickerScreen(
 
                     if (featuredCountries.isNotEmpty()) {
                         item {
-                            Text("Recommandés", style = MaterialTheme.typography.labelSmall,
+                            Text(stringResource(R.string.featured),
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp))
                         }
                         items(featuredCountries) { country ->
                             ListItem(
                                 headlineContent = { Text(country.name) },
-                                supportingContent = { Text("${country.stationCount} stations") },
+                                supportingContent = {
+                                    Text(stringResource(R.string.stations_count, country.stationCount))
+                                },
                                 modifier = Modifier.clickable { onCountrySelected(country.iso, country.name) }
                             )
                             HorizontalDivider()
                         }
                         item {
-                            Text("Tous les pays", style = MaterialTheme.typography.labelSmall,
+                            Text(stringResource(R.string.all_countries),
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp))
                         }
@@ -298,7 +309,9 @@ fun CountryPickerScreen(
                     items(otherCountries) { country ->
                         ListItem(
                             headlineContent = { Text(country.name) },
-                            supportingContent = { Text("${country.stationCount} stations") },
+                            supportingContent = {
+                                Text(stringResource(R.string.stations_count, country.stationCount))
+                            },
                             modifier = Modifier.clickable { onCountrySelected(country.iso, country.name) }
                         )
                         HorizontalDivider()

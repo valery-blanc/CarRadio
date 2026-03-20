@@ -110,6 +110,24 @@ Ordre impératif pour tout bug fix ou feature :
    (code + docs + TASKS.md) : `"FEAT-XXX: description courte"`
 9. Mettre à jour CLAUDE.md si des règles d'architecture ont changé
 
+### Règle de build release (OBLIGATOIRE)
+
+**À chaque build release (`./gradlew bundleRelease`) :**
+
+1. **Incrémenter `versionCode`** dans `app/build.gradle.kts` AVANT de builder.
+   Le Play Store rejette tout AAB dont le `versionCode` a déjà été uploadé.
+   Règle : `versionCode` = numéro séquentiel strictement croissant, sans exception.
+   Mettre à jour `versionName` si la version utilisateur change (ex: "1.1", "2.0").
+
+2. **Vérifier `proguard-rules.pro`** avant d'activer ou de modifier la minification.
+   La minification R8 (`isMinifyEnabled = true`) casse silencieusement :
+   - **Retrofit + Gson** : les DTOs (`data/api/dto/`) doivent être dans les règles `-keep`
+   - **Hilt** : les classes `@HiltViewModel` et `@Inject` doivent être conservées
+   - **Room** : les entités `@Entity` et DAOs `@Dao` doivent être conservées
+   - **Media3** : les classes ExoPlayer doivent être conservées
+   Le fichier `app/proguard-rules.pro` contient toutes ces règles.
+   Si un nouveau DTO, ViewModel ou entité Room est ajouté, vérifier qu'il est couvert.
+
 ## Architecture
 
 **Pattern:** MVVM + Repository, Jetpack Compose UI

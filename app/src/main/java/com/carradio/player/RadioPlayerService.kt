@@ -7,6 +7,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.carradio.R
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -31,7 +32,6 @@ class RadioPlayerService : MediaSessionService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        // Must call startForeground() within 5 seconds of startForegroundService()
         startForeground(NOTIFICATION_ID, buildInitialNotification())
         return START_STICKY
     }
@@ -51,10 +51,10 @@ class RadioPlayerService : MediaSessionService() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Lecture radio",
+            getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Contrôles de lecture CarRadio"
+            description = getString(R.string.notification_channel_description)
         }
         getSystemService(NotificationManager::class.java)
             .createNotificationChannel(channel)
@@ -62,8 +62,8 @@ class RadioPlayerService : MediaSessionService() {
 
     private fun buildInitialNotification(): Notification =
         NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("CarRadio")
-            .setContentText("Prêt à lire")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notification_ready))
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setSilent(true)
             .build()

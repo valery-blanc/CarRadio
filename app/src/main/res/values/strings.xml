@@ -1,35 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CarRadio</string>
-    <string name="add_station">Ajouter</string>
-    <string name="settings">Paramètres</string>
-    <string name="now_playing">En cours de lecture</string>
-    <string name="buffering">Chargement…</string>
-    <string name="error_no_network">Pas de connexion réseau</string>
-    <string name="error_stream_unavailable">Station indisponible</string>
-    <string name="error_api_unavailable">Impossible de contacter Radio Browser</string>
-    <string name="retry">Réessayer</string>
-    <string name="my_favorites">Mes favoris</string>
-    <string name="manage_favorites">Gérer mes favoris</string>
-    <string name="favorites_count">%1$d/16 stations configurées</string>
-    <string name="playback_section">Lecture</string>
-    <string name="display_section">Affichage</string>
-    <string name="about_section">À propos</string>
-    <string name="background_playback">Continuer la lecture en arrière-plan</string>
-    <string name="screen_always_on">Écran toujours allumé</string>
-    <string name="preferred_quality">Qualité préférée</string>
-    <string name="quality_high">Haute (192k+)</string>
-    <string name="quality_normal">Normale (128k)</string>
-    <string name="quality_low">Basse (&lt;128k)</string>
+    <string name="app_name">Auto Radio</string>
+
+    <!-- Navigation -->
+    <string name="back">Back</string>
+    <string name="settings">Settings</string>
+
+    <!-- Home -->
+    <string name="stop">Stop</string>
+    <string name="timer">Timer</string>
+    <string name="sleep_timer_active">Active timer</string>
+
+    <!-- Favorites -->
+    <string name="my_favorites">My favorites</string>
+    <string name="section_favorites">Favorites</string>
+    <string name="manage_favorites">Manage my favorites</string>
+    <string name="favorites_count">%1$d/16 stations configured</string>
+    <string name="favorites_hint">Long press to move / delete</string>
+    <string name="page_label">Page %1$d</string>
+    <string name="station_action_prompt">What do you want to do with this station?</string>
+    <string name="add_station">Add</string>
+    <string name="add_station_title">Add a station</string>
+    <string name="modify">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="station_added">Station added</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">Search…</string>
+    <string name="search_by_name">Search by name</string>
+    <string name="station_name_placeholder">Station name…</string>
+    <string name="clear">Clear</string>
+    <string name="no_station_found">No station found</string>
+    <string name="search_by_tag">Search by tag</string>
+    <string name="tag_placeholder">Music genre, style…</string>
+    <string name="search_by_country">Search by country</string>
+    <string name="filter_countries">Filter countries…</string>
+    <string name="featured">Featured</string>
+    <string name="all_countries">All countries</string>
+    <string name="stations_count">%1$d stations</string>
+    <string name="retry">Retry</string>
+    <string name="choose_country">Choose a country</string>
+    <string name="choose_station">Choose a station</string>
+
+    <!-- Playback -->
+    <string name="now_playing">Now playing</string>
+    <string name="buffering">Loading…</string>
+    <string name="error_no_network">No network connection</string>
+    <string name="error_stream_unavailable">Station unavailable</string>
+    <string name="error_api_unavailable">Unable to contact Radio Browser</string>
+
+    <!-- Sleep timer -->
+    <string name="sleep_timer_title">Sleep timer</string>
+    <string name="start">Start</string>
+    <string name="cancel_timer">Cancel timer</string>
+
+    <!-- Settings sections -->
+    <string name="playback_section">Playback</string>
+    <string name="display_section">Display</string>
+    <string name="about_section">About</string>
+    <string name="language_section">Language</string>
+
+    <!-- Settings items -->
+    <string name="background_playback">Continue playback in background</string>
+    <string name="screen_always_on">Screen always on</string>
+    <string name="preferred_quality">Preferred quality</string>
+    <string name="quality_high">High (192k+)</string>
+    <string name="quality_normal">Normal (128k)</string>
+    <string name="quality_low">Low (&lt;128k)</string>
+    <string name="version_label">Version</string>
+    <string name="about_data_label">Station data</string>
+    <string name="language_label">Language</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_data">Données stations : radio-browser.info</string>
-    <string name="choose_country">Choisir un pays</string>
-    <string name="choose_station">Choisir une station</string>
-    <string name="search_placeholder">Rechercher…</string>
-    <string name="station_added">Station ajoutée</string>
-    <string name="modify">Modifier</string>
-    <string name="delete">Supprimer</string>
+    <string name="about_data">Station data: radio-browser.info</string>
     <string name="page_indicator">Page %1$d / 2</string>
-    <string name="notification_channel_name">Lecture radio</string>
-    <string name="notification_channel_description">Contrôles de lecture CarRadio</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Radio playback</string>
+    <string name="notification_channel_description">Auto Radio playback controls</string>
+    <string name="notification_ready">Ready to play</string>
 </resources>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Auto Radio</string>
+
+    <string name="back">Zurück</string>
+    <string name="settings">Einstellungen</string>
+
+    <string name="stop">Stopp</string>
+    <string name="timer">Timer</string>
+    <string name="sleep_timer_active">Timer aktiv</string>
+
+    <string name="my_favorites">Meine Favoriten</string>
+    <string name="section_favorites">Meine Favoriten</string>
+    <string name="manage_favorites">Favoriten verwalten</string>
+    <string name="favorites_count">%1$d/16 Sender konfiguriert</string>
+    <string name="favorites_hint">Lang drücken zum Verschieben / Löschen</string>
+    <string name="page_label">Seite %1$d</string>
+    <string name="station_action_prompt">Was möchten Sie mit diesem Sender tun?</string>
+    <string name="add_station">Hinzufügen</string>
+    <string name="add_station_title">Sender hinzufügen</string>
+    <string name="modify">Bearbeiten</string>
+    <string name="delete">Löschen</string>
+    <string name="station_added">Sender hinzugefügt</string>
+
+    <string name="search_placeholder">Suchen…</string>
+    <string name="search_by_name">Nach Name suchen</string>
+    <string name="station_name_placeholder">Name des Senders…</string>
+    <string name="clear">Löschen</string>
+    <string name="no_station_found">Kein Sender gefunden</string>
+    <string name="search_by_tag">Nach Tag suchen</string>
+    <string name="tag_placeholder">Musikgenre, Stil…</string>
+    <string name="search_by_country">Nach Land suchen</string>
+    <string name="filter_countries">Länder filtern…</string>
+    <string name="featured">Empfohlen</string>
+    <string name="all_countries">Alle Länder</string>
+    <string name="stations_count">%1$d Sender</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="choose_country">Land auswählen</string>
+    <string name="choose_station">Sender auswählen</string>
+
+    <string name="now_playing">Jetzt läuft</string>
+    <string name="buffering">Laden…</string>
+    <string name="error_no_network">Keine Netzwerkverbindung</string>
+    <string name="error_stream_unavailable">Sender nicht verfügbar</string>
+    <string name="error_api_unavailable">Radio Browser nicht erreichbar</string>
+
+    <string name="sleep_timer_title">Schlaf-Timer</string>
+    <string name="start">Starten</string>
+    <string name="cancel_timer">Timer abbrechen</string>
+
+    <string name="playback_section">Wiedergabe</string>
+    <string name="display_section">Anzeige</string>
+    <string name="about_section">Über</string>
+    <string name="language_section">Sprache</string>
+
+    <string name="background_playback">Wiedergabe im Hintergrund fortsetzen</string>
+    <string name="screen_always_on">Bildschirm immer eingeschaltet</string>
+    <string name="preferred_quality">Bevorzugte Qualität</string>
+    <string name="quality_high">Hoch (192k+)</string>
+    <string name="quality_normal">Normal (128k)</string>
+    <string name="quality_low">Niedrig (&lt;128k)</string>
+    <string name="version_label">Version</string>
+    <string name="about_data_label">Stationsdaten</string>
+    <string name="language_label">Sprache</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_data">Stationsdaten: radio-browser.info</string>
+    <string name="page_indicator">Seite %1$d / 2</string>
+
+    <string name="notification_channel_name">Radio-Wiedergabe</string>
+    <string name="notification_channel_description">Auto Radio Wiedergabesteuerung</string>
+    <string name="notification_ready">Bereit zur Wiedergabe</string>
+</resources>

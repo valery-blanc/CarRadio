@@ -14,12 +14,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.carradio.R
 import com.carradio.domain.model.RadioStation
 
 @Composable
@@ -46,7 +48,8 @@ fun StationListScreen(
                 title = { Text(countryName) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -61,7 +64,7 @@ fun StationListScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = { Text("Rechercher…") },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -80,7 +83,7 @@ fun StationListScreen(
                             Text(state.message)
                             Spacer(Modifier.height(8.dp))
                             Button(onClick = { viewModel.loadStations(countryIso) }) {
-                                Text("Réessayer")
+                                Text(stringResource(R.string.retry))
                             }
                         }
                     }

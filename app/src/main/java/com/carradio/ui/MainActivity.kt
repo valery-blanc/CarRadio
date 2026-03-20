@@ -1,5 +1,6 @@
 package com.carradio.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.carradio.ui.navigation.NavGraph
 import com.carradio.ui.theme.CarRadioTheme
+import com.carradio.util.LocaleHelper
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -16,6 +18,11 @@ class MainActivity : ComponentActivity() {
 
     private val dimHandler = Handler(Looper.getMainLooper())
     private val dimRunnable = Runnable { dimScreen() }
+
+    override fun attachBaseContext(newBase: Context) {
+        val lang = LocaleHelper.getSavedLanguage(newBase)
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase, lang))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
