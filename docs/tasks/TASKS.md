@@ -106,6 +106,11 @@
 - [x] `carradio-spec.md` : v1.8, §6.1, §6.2, §6.7, §12 mis à jour
 - [x] Déployé et testé sur appareil
 
+## FEAT-010 : Mise en veille de la luminosité après 30s d'inactivité
+- [x] `MainActivity.kt` : Handler 30s + dimScreen/restoreBrightness + onUserInteraction
+- [x] `carradio-spec.md` : v1.10, §9 comportement en voiture mis à jour
+- [x] Déployé et testé sur appareil
+
 ## FEAT-009 : Bannière publicitaire AdMob + suppression NowPlayingBar
 - [x] `libs.versions.toml` : ajout play-services-ads
 - [x] `build.gradle.kts` : ajout dépendance AdMob

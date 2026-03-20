@@ -1,6 +1,6 @@
 # CarRadio — Specification Technique
 
-**Version :** 1.9 (FEAT-002/003/004/005/006/007/008/009)
+**Version :** 1.10 (FEAT-002/003/004/005/006/007/008/009/010)
 **Date :** 2026-03-20
 **Plateforme cible :** Android (API 26+, Android 8.0 Oreo minimum)
 **Langage :** Kotlin
@@ -654,7 +654,15 @@ data class CountryCache(
 window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 ```
 
-Ajouter un toggle dans les paramètres pour désactiver ce comportement.
+### Mise en veille de la luminosité (économie batterie)
+
+Après **30 secondes d'inactivité** (aucun touch ni bouton physique), la luminosité de l'écran descend au minimum (`0.01f`) via `window.attributes.screenBrightness`. La luminosité est restaurée à la valeur système (`BRIGHTNESS_OVERRIDE_NONE`) dès qu'une interaction est détectée.
+
+Implémentation dans `MainActivity` :
+- `onUserInteraction()` → restaure + replanifie le timer
+- `Handler.postDelayed(30s)` → déclenche le dim
+- `onPause()` → annule le timer et restaure
+- `onResume()` → replanifie le timer
 
 ### Taille des tuiles
 
