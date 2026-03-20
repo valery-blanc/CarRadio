@@ -16,10 +16,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.carradio.data.db.FavoriteStation
 import com.carradio.player.PlayerState
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 
 private fun Int.formatAsTimer(): String {
     val h = this / 3600
@@ -43,7 +48,6 @@ fun HomeScreen(
 
     val pagerState = rememberPagerState(pageCount = { 4 })
 
-    // Build a 32-slot grid: nulls for empty slots
     val slots: List<FavoriteStation?> = remember(favorites) {
         val map = favorites.associateBy { it.position }
         (0 until 32).map { map[it] }
@@ -59,7 +63,6 @@ fun HomeScreen(
                             Icon(Icons.Default.StopCircle, contentDescription = "Stop")
                         }
                     }
-                    // Sleep timer countdown
                     if (isTimerRunning && remainingSeconds != null) {
                         Row(
                             modifier = Modifier
@@ -81,7 +84,6 @@ fun HomeScreen(
                             )
                         }
                     }
-                    // Hourglass / timer icon
                     IconButton(onClick = onNavigateToTimer) {
                         Icon(
                             if (isTimerRunning) Icons.Default.HourglassTop else Icons.Default.HourglassEmpty,
@@ -91,16 +93,6 @@ fun HomeScreen(
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Paramètres")
                     }
-                }
-            )
-        },
-        bottomBar = {
-            NowPlayingBar(
-                station = currentStation,
-                playerState = playerState,
-                onPlayPause = {
-                    val station = currentStation ?: return@NowPlayingBar
-                    viewModel.onTileTapped(station)
                 }
             )
         }
@@ -135,7 +127,7 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 4.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
                 repeat(4) { index ->
@@ -154,8 +146,33 @@ fun HomeScreen(
                     }
                 }
             }
+
+            // AdMob banner — adaptive anchored
+            AdBanner()
         }
     }
+}
+
+@Composable
+private fun AdBanner() {
+    val context = LocalContext.current
+    val displayMetrics = context.resources.displayMetrics
+    val adWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
+    val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, adWidthDp)
+
+    AndroidView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(adSize.height.dp),
+        factory = { ctx ->
+            AdView(ctx).apply {
+                // REMPLACER par le vrai Ad Unit ID depuis la console AdMob
+                adUnitId = "ca-app-pub-3940256099942544/6300978111"
+                setAdSize(adSize)
+                loadAd(AdRequest.Builder().build())
+            }
+        }
+    )
 }
 
 @Composable

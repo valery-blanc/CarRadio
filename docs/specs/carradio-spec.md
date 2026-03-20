@@ -1,6 +1,6 @@
 # CarRadio — Specification Technique
 
-**Version :** 1.8 (FEAT-002/003/004/005/006/007/008)
+**Version :** 1.9 (FEAT-002/003/004/005/006/007/008/009)
 **Date :** 2026-03-20
 **Plateforme cible :** Android (API 26+, Android 8.0 Oreo minimum)
 **Langage :** Kotlin
@@ -326,7 +326,7 @@ HomeScreen
 
 ```
 ┌─────────────────────────────────────────┐
-│  CarRadio   [🌙 mm:ss] [⏳] [⚙️]  [■]  │  ← TopAppBar (quand minuteur actif)
+│  CarRadio   [🌙 mm:ss] [⏳] [⚙️]  [■]  │  ← TopAppBar (minuteur actif)
 │  CarRadio              [⏳] [⚙️]  [■]  │  ← TopAppBar (minuteur inactif)
 ├─────────────────────────────────────────┤
 │                                 │
@@ -339,7 +339,7 @@ HomeScreen
 │                                 │
 │       ● ● ○ ○  ← indicateur    │
 ├─────────────────────────────────┤
-│  ▶ France Inter — En direct     │  ← NowPlayingBar
+│  [ BANNIÈRE PUBLICITAIRE ]      │  ← AdMob adaptive banner (~50dp)
 └─────────────────────────────────┘
 ```
 
@@ -766,8 +766,7 @@ CarRadio/
 │   │   │   │   ├── home/
 │   │   │   │   │   ├── HomeScreen.kt
 │   │   │   │   │   ├── HomeViewModel.kt
-│   │   │   │   │   ├── RadioTile.kt
-│   │   │   │   │   └── NowPlayingBar.kt
+│   │   │   │   │   └── RadioTile.kt
 │   │   │   │   ├── settings/
 │   │   │   │   │   ├── SettingsScreen.kt
 │   │   │   │   │   └── SettingsViewModel.kt

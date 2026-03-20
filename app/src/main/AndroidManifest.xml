@@ -19,6 +19,11 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:usesCleartextTraffic="true">
 
+        <!-- AdMob App ID — REMPLACER par le vrai ID depuis la console AdMob -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"

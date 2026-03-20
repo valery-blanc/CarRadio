@@ -81,4 +81,7 @@ dependencies {
 
     // Material Icons Extended
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // AdMob
+    implementation(libs.play.services.ads)
 }

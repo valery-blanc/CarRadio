@@ -104,4 +104,14 @@
 - [x] `NavGraph.kt` : route `SLEEP_TIMER`, SleepTimerViewModel partagé (activity-scoped)
 - [x] `HomeScreen.kt` : icône sablier, affichage Bedtime + compte à rebours quand actif
 - [x] `carradio-spec.md` : v1.8, §6.1, §6.2, §6.7, §12 mis à jour
-- [ ] Déployé et testé sur appareil
+- [x] Déployé et testé sur appareil
+
+## FEAT-009 : Bannière publicitaire AdMob + suppression NowPlayingBar
+- [x] `libs.versions.toml` : ajout play-services-ads
+- [x] `build.gradle.kts` : ajout dépendance AdMob
+- [x] `AndroidManifest.xml` : meta-data App ID AdMob (test ID)
+- [x] `CarRadioApplication.kt` : initialisation MobileAds
+- [x] `HomeScreen.kt` : suppression NowPlayingBar, ajout AdBanner en bas
+- [x] `NowPlayingBar.kt` : suppression du fichier
+- [x] `carradio-spec.md` : v1.9, mise à jour §6.2 layout, §12 structure
+- [x] Déployé et testé sur appareil

@@ -1,7 +1,13 @@
 package com.carradio
 
 import android.app.Application
+import com.google.android.gms.ads.MobileAds
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class CarRadioApplication : Application()
+class CarRadioApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        MobileAds.initialize(this)
+    }
+}
