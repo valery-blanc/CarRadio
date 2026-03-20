@@ -1,6 +1,6 @@
 # CarRadio — Specification Technique
 
-**Version :** 1.7 (FEAT-002/003/004/005/006/007)
+**Version :** 1.8 (FEAT-002/003/004/005/006/007/008)
 **Date :** 2026-03-20
 **Plateforme cible :** Android (API 26+, Android 8.0 Oreo minimum)
 **Langage :** Kotlin
@@ -307,6 +307,7 @@ app/
 
 ```
 HomeScreen
+    ├── (icône ⏳ ou compte à rebours/lune) → SleepTimerScreen
     └── (icône ⚙️) → SettingsScreen
                         └── "Gérer mes favoris" → FavoritesPickerScreen
                                                       ├── (slot vide) → CountryPickerScreen
@@ -324,9 +325,10 @@ HomeScreen
 **Layout :**
 
 ```
-┌─────────────────────────────────┐
-│  CarRadio          [⚙️]  [■]    │  ← TopAppBar
-├─────────────────────────────────┤
+┌─────────────────────────────────────────┐
+│  CarRadio   [🌙 mm:ss] [⏳] [⚙️]  [■]  │  ← TopAppBar (quand minuteur actif)
+│  CarRadio              [⏳] [⚙️]  [■]  │  ← TopAppBar (minuteur inactif)
+├─────────────────────────────────────────┤
 │                                 │
 │  ┌──────────┐  ┌──────────┐    │
 │  │  [logo]  │  │  [logo]  │    │
@@ -469,6 +471,33 @@ HomeScreen
   - Nom de la station
   - Codec · bitrate · région (`state`) · pays · langue (`language`) en supporting text (champs vides omis)
 - **Tap sur une station** → ajoute au slot sélectionné, retourne à `FavoritesPickerScreen`
+
+---
+
+### 6.7 SleepTimerScreen — Minuteur sommeil
+
+**Description :** Écran de réglage du minuteur d'extinction automatique.
+
+**Layout :** 3 roues (drum scroll picker) côte à côte : heures (0–23), minutes (0–59), secondes (0–59). Deux boutons en dessous.
+
+**Comportement :**
+- Roues scrollables avec snap : la valeur centrale est mise en évidence (grande, couleur primaire), les autres sont atténuées.
+- Bouton **Démarrer** → lance le décompte et revient à `HomeScreen`.
+- Bouton **Annuler le minuteur** → visible seulement si un minuteur est en cours ; l'annule et remet le volume à 1.0.
+- Si le total est 0 → Démarrer ne fait rien.
+
+**TopAppBar de HomeScreen quand minuteur actif :**
+- Icône `Bedtime` (lune) + temps restant au format `H:MM:SS` ou `MM:SS` — zone cliquable → `SleepTimerScreen`.
+- Icône `HourglassTop` (sablier animé) → `SleepTimerScreen`.
+- Icône `Settings` → `SettingsScreen`.
+
+**Comportement à l'expiration :**
+- 30 dernières secondes : volume ExoPlayer diminue linéairement de 1.0 à 0.0.
+- À 0 : `playerController.stop()` puis `Process.killProcess(myPid())` — l'application se ferme proprement.
+
+**Architecture :**
+- `SleepTimerViewModel` (@HiltViewModel) instancié dans `NavGraph()` avant le `NavHost` → scoped à l'activité, partagé entre `HomeScreen` et `SleepTimerScreen`.
+- Countdown géré par une coroutine dans `viewModelScope`.
 
 ---
 
@@ -742,6 +771,9 @@ CarRadio/
 │   │   │   │   ├── settings/
 │   │   │   │   │   ├── SettingsScreen.kt
 │   │   │   │   │   └── SettingsViewModel.kt
+│   │   │   │   ├── timer/
+│   │   │   │   │   ├── SleepTimerScreen.kt
+│   │   │   │   │   └── SleepTimerViewModel.kt
 │   │   │   │   └── favorites/
 │   │   │   │       ├── FavoritesPickerScreen.kt
 │   │   │   │       ├── CountryPickerScreen.kt

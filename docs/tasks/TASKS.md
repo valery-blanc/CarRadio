@@ -96,3 +96,12 @@
 - [x] `FavoritesViewModel` : ajout `swapFavorites(from, to)`
 - [x] `FavoritesPickerScreen` : appui long → sélection, tap → swap, poubelle dans TopAppBar, label info
 - [x] Testé et confirmé par l'utilisateur
+
+## FEAT-008 : Minuteur sommeil (Sleep Timer)
+- [x] `docs/specs/FEAT-008-sleep-timer.md` : spec créée
+- [x] `SleepTimerViewModel.kt` : countdown, fade volume 30s, killProcess à l'expiration
+- [x] `SleepTimerScreen.kt` : 3 roues drum picker (heures/min/sec) + boutons Démarrer/Annuler
+- [x] `NavGraph.kt` : route `SLEEP_TIMER`, SleepTimerViewModel partagé (activity-scoped)
+- [x] `HomeScreen.kt` : icône sablier, affichage Bedtime + compte à rebours quand actif
+- [x] `carradio-spec.md` : v1.8, §6.1, §6.2, §6.7, §12 mis à jour
+- [ ] Déployé et testé sur appareil

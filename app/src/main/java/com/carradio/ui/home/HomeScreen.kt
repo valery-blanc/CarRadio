@@ -2,10 +2,14 @@
 package com.carradio.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material3.*
@@ -17,10 +21,20 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.carradio.data.db.FavoriteStation
 import com.carradio.player.PlayerState
 
+private fun Int.formatAsTimer(): String {
+    val h = this / 3600
+    val m = (this % 3600) / 60
+    val s = this % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToTimer: () -> Unit,
+    isTimerRunning: Boolean = false,
+    remainingSeconds: Int? = null,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val favorites by viewModel.favorites.collectAsState()
@@ -44,6 +58,35 @@ fun HomeScreen(
                         IconButton(onClick = { viewModel.stopPlayback() }) {
                             Icon(Icons.Default.StopCircle, contentDescription = "Stop")
                         }
+                    }
+                    // Sleep timer countdown
+                    if (isTimerRunning && remainingSeconds != null) {
+                        Row(
+                            modifier = Modifier
+                                .clickable { onNavigateToTimer() }
+                                .padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Bedtime,
+                                contentDescription = "Minuteur actif",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = remainingSeconds.formatAsTimer(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    // Hourglass / timer icon
+                    IconButton(onClick = onNavigateToTimer) {
+                        Icon(
+                            if (isTimerRunning) Icons.Default.HourglassTop else Icons.Default.HourglassEmpty,
+                            contentDescription = "Minuteur"
+                        )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Paramètres")
