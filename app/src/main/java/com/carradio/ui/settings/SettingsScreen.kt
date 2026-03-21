@@ -32,16 +32,16 @@ private val LANGUAGES = listOf(
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onManageFavorites: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val favoritesCount by viewModel.favoritesCount.collectAsState()
 
     var backgroundPlayback by remember { mutableStateOf(viewModel.backgroundPlayback) }
     var screenAlwaysOn by remember { mutableStateOf(viewModel.screenAlwaysOn) }
     var preferredQuality by remember { mutableStateOf(viewModel.preferredQuality) }
     var currentLanguage by remember { mutableStateOf(viewModel.appLanguage) }
+    var dimEnabled by remember { mutableStateOf(viewModel.dimEnabled) }
+    var dimBrightness by remember { mutableStateOf(viewModel.dimBrightness) }
     var showQualityDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
 
@@ -64,21 +64,6 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Section Favoris
-            SettingsSectionHeader(stringResource(R.string.section_favorites))
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.manage_favorites)) },
-                supportingContent = {
-                    Text(stringResource(R.string.favorites_count, favoritesCount))
-                },
-                trailingContent = {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                },
-                modifier = Modifier.clickable { onManageFavorites() }
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
             // Section Lecture
             SettingsSectionHeader(stringResource(R.string.playback_section))
             ListItem(
@@ -124,6 +109,36 @@ fun SettingsScreen(
                     )
                 }
             )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.dim_screen_enabled)) },
+                trailingContent = {
+                    Switch(
+                        checked = dimEnabled,
+                        onCheckedChange = {
+                            dimEnabled = it
+                            viewModel.dimEnabled = it
+                        }
+                    )
+                }
+            )
+            if (dimEnabled) {
+                ListItem(
+                    headlineContent = {
+                        Text(stringResource(R.string.dim_brightness_label, dimBrightness))
+                    },
+                    supportingContent = {
+                        Slider(
+                            value = dimBrightness.toFloat(),
+                            onValueChange = {
+                                dimBrightness = it.toInt()
+                                viewModel.dimBrightness = it.toInt()
+                            },
+                            valueRange = 1f..50f,
+                            steps = 48
+                        )
+                    }
+                )
+            }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 

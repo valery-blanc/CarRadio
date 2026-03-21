@@ -1,7 +1,7 @@
 # CarRadio — Specification Technique
 
-**Version :** 1.10 (FEAT-002/003/004/005/006/007/008/009/010)
-**Date :** 2026-03-20
+**Version :** 1.12 (FEAT-002/003/004/005/006/007/008/009/010/012)
+**Date :** 2026-03-21
 **Plateforme cible :** Android (API 26+, Android 8.0 Oreo minimum)
 **Langage :** Kotlin
 **Architecture :** MVVM + Repository pattern
@@ -32,10 +32,10 @@ CarRadio est une application Android de streaming radio internet conçue pour un
 
 ### Principe de fonctionnement
 
-- L'utilisateur configure jusqu'à **32 stations favorites**, réparties sur **4 pages** de **8 tuiles** chacune (2 colonnes × 4 lignes).
-- On passe d'une page à l'autre par un **swipe horizontal**.
-- Un tap sur une tuile lance la lecture de la station. Un second tap sur la même tuile la met en pause.
-- Les stations favorites sont choisies via un **écran de paramètres** qui exploite la **Radio Browser API** (base de données mondiale, gratuite et open source).
+- L'utilisateur configure des **stations favorites** réparties sur **N pages dynamiques** de **8 tuiles** chacune (2 colonnes × 4 lignes). Les pages sont créées automatiquement ou via le menu.
+- On passe d'une page à l'autre par un **swipe horizontal**. La dernière page est toujours la **page de recherche**.
+- Un tap sur une tuile remplie lance la lecture. Un appui long affiche un menu déplacer/supprimer. Un tap sur une tuile vide amène à la page de recherche.
+- Les stations favorites sont ajoutées directement depuis la **page de recherche** intégrée au pager, qui exploite la **Radio Browser API** (base de données mondiale, gratuite et open source).
 
 ---
 
@@ -278,17 +278,14 @@ app/
 │   ├── navigation/
 │   │   └── NavGraph.kt
 │   ├── home/
-│   │   ├── HomeScreen.kt               // Écran principal (4 pages swipables)
-│   │   ├── HomeViewModel.kt
-│   │   ├── RadioTile.kt                // Composant tuile
-│   │   └── NowPlayingBar.kt            // Barre "en cours de lecture"
+│   │   ├── HomeScreen.kt               // Écran principal (pager dynamique + page recherche intégrée)
+│   │   ├── HomeViewModel.kt            // favoritePageCount, play, addFav, swap, remove
+│   │   └── RadioTile.kt                // Composant tuile (appui long, mode déplacement)
 │   ├── settings/
 │   │   ├── SettingsScreen.kt           // Menu paramètres
 │   │   └── SettingsViewModel.kt
 │   └── favorites/
-│       ├── FavoritesPickerScreen.kt    // Gestion des favoris (réorganisation)
-│       ├── CountryPickerScreen.kt      // Recherche par nom / tag / pays
-│       ├── StationListScreen.kt        // Liste des stations d'un pays
+│       ├── CountryPickerScreen.kt      // SearchPageContent + InlineStationList (boutons ▶/■ + ♡/♥)
 │       └── FavoritesViewModel.kt
 ├── player/
 │   ├── RadioPlayerService.kt           // MediaSessionService (background)
@@ -306,78 +303,80 @@ app/
 ### 6.1 Graphe de navigation
 
 ```
-HomeScreen
-    ├── (icône ⏳ ou compte à rebours/lune) → SleepTimerScreen
-    └── (icône ⚙️) → SettingsScreen
-                        └── "Gérer mes favoris" → FavoritesPickerScreen
-                                                      ├── (slot vide) → CountryPickerScreen
-                                                      │                     ├── (résultat nom/tag) → retour direct FavoritesPickerScreen
-                                                      │                     └── (pays) → StationListScreen → retour FavoritesPickerScreen
-                                                      └── (appui long slot rempli) → réorganisation in-place
+HomeScreen (HorizontalPager : N pages favoris + page recherche)
+    ├── (menu ⋮ → Paramètres) → SettingsScreen
+    ├── (menu ⋮ → Timer / compte à rebours 🌙) → SleepTimerScreen
+    ├── (menu ⋮ → Ajouter une page de favoris) → ajoute page in-place
+    ├── (bouton stop ■, si lecture active) → arrêt lecture in-place
+    ├── (page recherche → pays) → StationListScreen → retour HomeScreen
+    └── (tuile vide) → scroll vers page recherche
 ```
 
 ---
 
 ### 6.2 HomeScreen — Écran principal
 
-**Description :** Écran plein écran avec un `HorizontalPager` (4 pages). Chaque page affiche une grille 2 × 4 de tuiles radio.
+**Description :** Écran plein écran avec un `HorizontalPager` dynamique. Pages = N pages de favoris + 1 page de recherche (toujours en dernier).
 
 **Layout :**
 
 ```
 ┌─────────────────────────────────────────┐
-│  CarRadio   [🌙 mm:ss] [⏳] [⚙️]  [■]  │  ← TopAppBar (minuteur actif)
-│  CarRadio              [⏳] [⚙️]  [■]  │  ← TopAppBar (minuteur inactif)
+│  🔊 Auto Radio  [🌙 mm:ss] [■]  [⋮]   │  ← TopAppBar
 ├─────────────────────────────────────────┤
-│                                 │
-│  ┌──────────┐  ┌──────────┐    │
-│  │  [logo]  │  │  [logo]  │    │
-│  │France    │  │RTL       │    │
-│  │Inter     │  │          │    │
-│  └──────────┘  └──────────┘    │
-│         ...           ...       │
-│                                 │
-│       ● ● ○ ○  ← indicateur    │
-├─────────────────────────────────┤
-│  [ BANNIÈRE PUBLICITAIRE ]      │  ← AdMob adaptive banner (~50dp)
-└─────────────────────────────────┘
+│  [barre "Appuyez sur la tuile cible"]   │  ← visible en mode déplacement
+│                                         │
+│  ┌──────────┐  ┌──────────┐            │
+│  │  [logo]  │  │  [logo]  │            │
+│  │France    │  │RTL       │            │
+│  │Inter     │  │          │            │
+│  └──────────┘  └──────────┘            │
+│         ...           ...               │
+│                                         │
+│       ● ● ○ ◌  ← indicateur (◌ = search)│
+├─────────────────────────────────────────┤
+│  [ BANNIÈRE PUBLICITAIRE ]              │  ← AdMob adaptive banner
+└─────────────────────────────────────────┘
 ```
 
-**Comportement des tuiles :**
+**Comportement des tuiles (pages favoris) :**
 
-- Tuile **remplie** (favori configuré) :
-  - Affiche le logo de la radio (chargé avec Coil, placeholder si absent)
-  - Affiche le nom de la radio sous le logo
-  - Fond coloré légèrement différencié quand la station est en cours de lecture (état `PLAYING`)
-  - **Tap** → lance la lecture si autre station active, ou met en pause/reprend si c'est la station active
-  - Indicateur visuel (icône ▶ ou animation de barres EQ) sur la tuile active
-- Tuile **vide** (aucun favori à cette position) :
-  - Affiche une icône `+` avec le texte "Ajouter"
-  - **Tap** → navigue directement vers `FavoritesPickerScreen`
+- Tuile **remplie** :
+  - **Tap** → play/pause de la station
+  - **Appui long** → AlertDialog : "Déplacer" / "Supprimer"
+  - En mode déplacement : tap sur n'importe quelle tuile → swap avec la tuile source
+  - Quand sélectionnée pour déplacement : bordure et fond `tertiary`
+- Tuile **vide** :
+  - **Tap** → scroll automatique vers la page de recherche (dernière page)
 
 **TopAppBar :**
-- Titre : "CarRadio"
-- Icône `⚙️` → navigue vers `SettingsScreen`
-- Icône ■ (stop) → arrête la lecture en cours (visible uniquement si une station est chargée)
+- Icône CarRadio + "Auto Radio"
+- Si timer actif : 🌙 mm:ss (cliquable → SleepTimerScreen)
+- Si lecture active : ■ (stop)
+- Bouton ⋮ (menu) :
+  - Paramètres → SettingsScreen
+  - Timer → SleepTimerScreen
+  - Ajouter une page de favoris → incrémente le nombre de pages
 
-**Indicateur de page :** Quatre points (● ● ○ ○) centrés en bas du pager.
+**Nombre de pages de favoris :**
+- Persisté dans SharedPreferences (`favorite_page_count`)
+- Défaut : 0 (première ouverture → seule la page recherche est visible)
+- Incrémente automatiquement quand on ajoute un favori et que toutes les pages sont pleines
 
-**NowPlayingBar :** Barre fixe en bas de l'écran, visible uniquement quand une station est chargée. Affiche :
-- Icône play/pause
-- Nom de la station
-- Indicateur de buffering si applicable
+**Page de recherche (dernière page du pager) :**
+- Contenu : recherche par nom, tag, pays (cf. §6.5)
+- Chaque station a un bouton ▶ (play immédiat) et un bouton ♡/♥ (ajouter aux favoris)
+- ♥ plein = déjà en favori (bouton désactivé)
+
+**Indicateur de page :** N+1 points en bas du pager. Le dernier point (page recherche) est de couleur `secondary`.
 
 ---
 
 ### 6.3 SettingsScreen — Paramètres
 
-**Description :** Écran simple avec liste de paramètres.
+**Description :** Écran simple avec liste de paramètres. La gestion des favoris se fait maintenant directement depuis HomeScreen (suppression de l'entrée "Gérer mes favoris").
 
 **Contenu :**
-
-- Section **"Mes favoris"**
-  - Entrée : "Gérer mes favoris" → `FavoritesPickerScreen`
-  - Sous-texte : "X/32 stations configurées"
 
 - Section **"Lecture"**
   - Toggle : "Continuer la lecture quand l'app est en arrière-plan" (défaut : activé)
@@ -385,6 +384,8 @@ HomeScreen
 
 - Section **"Affichage"**
   - Toggle : "Écran toujours allumé" (défaut : activé) — contrôle `FLAG_KEEP_SCREEN_ON`
+  - Toggle : "Réduire la luminosité après 30s d'inactivité" (défaut : activé) — clé prefs `dim_enabled`
+  - Si activé → Slider : "Luminosité réduite : XX%" (plage 1%–50%, défaut 10%) — clé prefs `dim_brightness`
 
 - Section **"À propos"**
   - Version de l'app
@@ -392,85 +393,49 @@ HomeScreen
 
 ---
 
-### 6.4 FavoritesPickerScreen — Gestion des favoris
+### 6.4 FavoritesPickerScreen — SUPPRIMÉ (FEAT-012)
 
-**Description :** Écran de gestion permettant de visualiser les 32 slots (4 pages × 8), modifier chaque favori, et réorganiser leur ordre.
-
-**Layout :**
-
-```
-┌─────────────────────────────────────┐
-│  ← Mes favoris              [🗑️]    │  ← poubelle visible si tuile sélectionnée
-├─────────────────────────────────────┤
-│  Appui long pour déplacer/supprimer │  ← label d'aide
-│  Page 1                             │
-│  ┌──────────┐  ┌──────────┐        │
-│  │ France   │  │  RTL     │        │
-│  │ Inter    │  │          │        │
-│  └──────────┘  └──────────┘        │
-│  ┌──────────┐  ┌──────────┐        │
-│  │  Europe 1│  │  [+]     │        │
-│  └──────────┘  └──────────┘        │
-│  ...                                │
-│  Page 2                             │
-│  ...                                │
-│  Page 3 / Page 4                    │
-└─────────────────────────────────────┘
-```
-
-**Interactions :**
-
-- **Tap sur un slot vide** → navigue vers `CountryPickerScreen` avec le numéro de slot
-- **Tap sur un slot rempli** (sans sélection en cours) → dialogue "Modifier" / "Supprimer"
-- **Appui long sur un slot rempli** → slot "sélectionné" (bordure couleur primaire, légèrement agrandi, fond primaryContainer)
-- **Tap sur un autre slot** (quand un slot est sélectionné) → les deux slots échangent leurs positions (`swapFavorites`). Fonctionne entre pages.
-- **Tap sur le slot sélectionné** → désélection
-- **Icône poubelle dans TopAppBar** (visible uniquement si slot sélectionné) → supprime le favori du slot sélectionné
+Cette page a été supprimée. La gestion des favoris se fait désormais directement depuis HomeScreen (appui long sur les tuiles).
 
 ---
 
-### 6.5 CountryPickerScreen — Recherche de station
+### 6.5 SearchPage — Page de recherche (intégrée au HorizontalPager)
 
-**Description :** Écran de recherche de station en trois sections, dans un `LazyColumn` scrollable.
+**Description :** Page de recherche intégrée dans le HorizontalPager (dernière page). Pas de Scaffold propre — s'affiche dans le contexte de HomeScreen. Contenu : `LazyColumn` avec trois sections de recherche.
 
 #### Section 1 — Recherche par nom
 - Champ texte avec `ImeAction.Search`
 - Sur appui Retour clavier → requête `searchStationsByName(query)`, limite 30 résultats
-- Résultats affichés inline : nom, codec · bitrate · région · pays · langue
-- Tap sur une station → ajout au slot + retour direct à `FavoritesPickerScreen`
 - Bouton "Effacer" pour réinitialiser
+- Chaque résultat : nom + info + bouton **▶** (play) + bouton **♡** (ajouter aux favoris)
 
 #### Section 2 — Recherche par tag
 - Champ texte avec auto-complétion (`ExposedDropdownMenuBox`)
 - Auto-complétion déclenchée après **3 caractères minimum**, avec debounce 300ms
-- Requête : `GET /json/tags/{searchTerm}?order=stationcount&reverse=true&limit=10`
-- Sélection d'un tag dans le dropdown → ou appui Retour clavier → requête `getStationsByTag(tag)`, limite 50 résultats
-- Résultats affichés : nom, pays, tags (3 premiers)
-- Tap sur une station → ajout au slot + retour direct à `FavoritesPickerScreen`
+- Chaque résultat : nom + pays/tags + bouton **▶** + bouton **♡**
 
 #### Section 3 — Recherche par pays
 - Champ texte pour filtrer la liste des pays
 - **Pays mis en avant** (hors filtre) : France, Suisse, Belgique, Canada
-- Liste complète alphabétique ensuite
-- Chaque entrée : nom du pays + nombre de stations
+- Tap sur un pays → affiche la liste des stations **inline** (dans la même page, sans navigation externe) avec un bouton ← retour
 - Cache 24h (Room `countries_cache`)
-- Tap sur un pays → navigue vers `StationListScreen`
+
+#### Comportement des boutons ♡ / ▶ (sections 1, 2 et liste par pays)
+- **▶** → joue immédiatement la station. Si cette station est déjà en lecture : le bouton devient **■** (stop).
+- **♡ vide** → ajoute aux favoris sur la première tuile vide disponible. Si toutes les pages sont pleines ou inexistantes : crée une nouvelle page.
+- **♥ plein** → station déjà en favori. Cliquer dessus **supprime le favori** (la tuile correspondante se vide).
+
+#### Liste inline par pays (remplace StationListScreen)
+- Header avec bouton ← et nom du pays
+- Barre de recherche filtrante
+- Logo + Nom + Codec · bitrate · région · pays · langue
+- Boutons ▶/■ et ♡/♥ sur chaque ligne
 
 ---
 
-### 6.6 StationListScreen — Choix d'une station par pays
+### 6.6 StationListScreen — SUPPRIMÉ (FEAT-012)
 
-**Description :** Liste des stations d'un pays, triée par popularité.
-
-**Comportement :**
-- Affiche le nom du pays dans la TopAppBar (bouton retour)
-- Requête : `GET /json/stations/search?countrycode=XX&order=clickcount&reverse=true&hidebroken=true&limit=200`
-- Barre de recherche pour filtrer par nom
-- Chaque entrée affiche :
-  - Logo de la station (Coil, 48dp)
-  - Nom de la station
-  - Codec · bitrate · région (`state`) · pays · langue (`language`) en supporting text (champs vides omis)
-- **Tap sur une station** → ajoute au slot sélectionné, retourne à `FavoritesPickerScreen`
+Remplacé par la liste inline dans SearchPage (§6.5 Section 3). Plus de navigation externe.
 
 ---
 
@@ -656,11 +621,16 @@ window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
 ### Mise en veille de la luminosité (économie batterie)
 
-Après **30 secondes d'inactivité** (aucun touch ni bouton physique), la luminosité de l'écran descend au minimum (`0.01f`) via `window.attributes.screenBrightness`. La luminosité est restaurée à la valeur système (`BRIGHTNESS_OVERRIDE_NONE`) dès qu'une interaction est détectée.
+Après **30 secondes d'inactivité** (aucun touch ni bouton physique), la luminosité de l'écran est réduite via `window.attributes.screenBrightness`. La luminosité est restaurée à la valeur système (`BRIGHTNESS_OVERRIDE_NONE`) dès qu'une interaction est détectée.
+
+**Paramètres (SharedPreferences `carradio_prefs`) :**
+- `dim_enabled` (Boolean, défaut `true`) — active/désactive le comportement
+- `dim_brightness` (Int, défaut `10`) — niveau cible en pourcentage (1–50%)
 
 Implémentation dans `MainActivity` :
-- `onUserInteraction()` → restaure + replanifie le timer
-- `Handler.postDelayed(30s)` → déclenche le dim
+- `onUserInteraction()` → restaure + replanifie le timer si `dim_enabled`
+- `Handler.postDelayed(30s)` → déclenche le dim si `dim_enabled`
+- `dimScreen()` → lit les prefs au moment du déclenchement (réactif aux changements dans Paramètres)
 - `onPause()` → annule le timer et restaure
 - `onResume()` → replanifie le timer
 

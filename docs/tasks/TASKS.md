@@ -120,3 +120,41 @@
 - [x] `NowPlayingBar.kt` : suppression du fichier
 - [x] `carradio-spec.md` : v1.9, mise à jour §6.2 layout, §12 structure
 - [x] Déployé et testé sur appareil
+
+## FEAT-012 : Refonte interface principale
+
+### Documentation
+- [x] `docs/specs/FEAT-012-refonte-interface.md` créé
+- [x] `docs/specs/carradio-spec.md` mis à jour (v1.12)
+
+### Strings (i18n)
+- [x] `values/strings.xml` — nouvelles chaînes
+- [x] `values-fr/strings.xml`
+- [x] `values-es/strings.xml`
+- [x] `values-pt/strings.xml`
+- [x] `values-de/strings.xml`
+
+### Code
+- [x] `HomeViewModel.kt` — favoritePageCount, addBlankPage, addFavoriteToNextAvailableSlot, swapFavorites, removeFavoriteAtPosition, playStation
+- [x] `RadioTile.kt` — appui long + isSelectedForMove
+- [x] `CountryPickerScreen.kt` → SearchPageContent (sans Scaffold, boutons play+cœur)
+- [x] `StationListScreen.kt` — boutons play+cœur, suppression slotPosition
+- [x] `HomeScreen.kt` — pager dynamique, menu, mode déplacement, SearchPage intégrée
+- [x] `NavGraph.kt` — HomeViewModel partagé, routes simplifiées
+- [x] `SettingsScreen.kt` — suppression section "Gérer mes favoris"
+- [x] `FavoritesPickerScreen.kt` — supprimé
+
+### Bugs découverts lors des tests
+- [x] BUG-013 : navigation externe pays → liste inline dans SearchPage
+- [x] BUG-014 : favoritePageCount = 0 après reinstall (Android Auto Backup)
+
+### Features additionnelles (confirmées OK)
+- [x] FEAT-2 : bouton play → stop quand radio en lecture
+- [x] FEAT-3 : cœur plein cliquable → supprime le favori
+- [x] FEAT-1 : paramètre luminosité configurable (toggle + slider)
+
+### Déploiement
+- [x] Build et déploiement sur appareil (APK debug)
+- [x] Test et confirmation utilisateur
+- [ ] Commit + push GitHub
+- [ ] Build release bundle (Play Store)

@@ -1,8 +1,14 @@
+@file:OptIn(
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class
+)
 package com.carradio.ui.home
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,9 +35,12 @@ fun RadioTile(
     isActive: Boolean,
     playerState: PlayerState,
     onTap: () -> Unit,
+    onLongPress: (() -> Unit)? = null,
+    isSelectedForMove: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val bgColor = when {
+        isSelectedForMove -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f)
         isActive && playerState == PlayerState.PLAYING -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
         isActive -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
         else -> MaterialTheme.colorScheme.surface
@@ -42,7 +51,16 @@ fun RadioTile(
             .fillMaxSize()
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
-            .clickable { onTap() }
+            .then(
+                if (isSelectedForMove)
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(12.dp))
+                else
+                    Modifier
+            )
+            .combinedClickable(
+                onClick = onTap,
+                onLongClick = onLongPress
+            )
             .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -100,9 +118,7 @@ private fun FilledTile(
             }
 
             if (isActive && playerState == PlayerState.PLAYING) {
-                PlayingIndicator(
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                )
+                PlayingIndicator(modifier = Modifier.align(Alignment.BottomEnd))
             }
         }
 

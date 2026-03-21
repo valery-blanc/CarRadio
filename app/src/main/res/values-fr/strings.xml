@@ -66,6 +66,15 @@
     <string name="about_data">Données stations : radio-browser.info</string>
     <string name="page_indicator">Page %1$d / 2</string>
 
+    <string name="dim_screen_enabled">Réduire la luminosité après 30s d\'inactivité</string>
+    <string name="dim_brightness_label">Luminosité réduite : %1$d%%</string>
+
+    <string name="play">Jouer</string>
+    <string name="add_to_favorites">Ajouter aux favoris</string>
+    <string name="add_favorites_page">Ajouter une page de favoris</string>
+    <string name="move">Déplacer</string>
+    <string name="move_hint">Appuyez sur la tuile cible</string>
+
     <string name="notification_channel_name">Lecture radio</string>
     <string name="notification_channel_description">Contrôles de lecture Auto Radio</string>
     <string name="notification_ready">Prêt à lire</string>

@@ -41,6 +41,14 @@ class SettingsViewModel @Inject constructor(
         get() = prefs.getString("app_language", "en") ?: "en"
         set(value) { prefs.edit().putString("app_language", value).apply() }
 
+    var dimEnabled: Boolean
+        get() = prefs.getBoolean("dim_enabled", true)
+        set(value) { prefs.edit().putBoolean("dim_enabled", value).apply() }
+
+    var dimBrightness: Int  // 0–100
+        get() = prefs.getInt("dim_brightness", 10)
+        set(value) { prefs.edit().putInt("dim_brightness", value).apply() }
+
     init {
         viewModelScope.launch {
             _favoritesCount.value = repository.getFavoritesCount()

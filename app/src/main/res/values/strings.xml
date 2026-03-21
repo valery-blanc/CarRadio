@@ -74,6 +74,17 @@
     <string name="about_data">Station data: radio-browser.info</string>
     <string name="page_indicator">Page %1$d / 2</string>
 
+    <!-- Dim screen settings -->
+    <string name="dim_screen_enabled">Dim screen after 30s of inactivity</string>
+    <string name="dim_brightness_label">Reduced brightness: %1$d%%</string>
+
+    <!-- Home menu & tiles -->
+    <string name="play">Play</string>
+    <string name="add_to_favorites">Add to favorites</string>
+    <string name="add_favorites_page">Add a favorites page</string>
+    <string name="move">Move</string>
+    <string name="move_hint">Tap target tile</string>
+
     <!-- Notification -->
     <string name="notification_channel_name">Radio playback</string>
     <string name="notification_channel_description">Auto Radio playback controls</string>

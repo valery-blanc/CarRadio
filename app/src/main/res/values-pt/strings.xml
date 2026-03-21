@@ -66,6 +66,15 @@
     <string name="about_data">Dados de estações: radio-browser.info</string>
     <string name="page_indicator">Página %1$d / 2</string>
 
+    <string name="dim_screen_enabled">Reduzir brilho após 30s de inatividade</string>
+    <string name="dim_brightness_label">Brilho reduzido: %1$d%%</string>
+
+    <string name="play">Reproduzir</string>
+    <string name="add_to_favorites">Adicionar aos favoritos</string>
+    <string name="add_favorites_page">Adicionar página de favoritos</string>
+    <string name="move">Mover</string>
+    <string name="move_hint">Toque na célula de destino</string>
+
     <string name="notification_channel_name">Reprodução de rádio</string>
     <string name="notification_channel_description">Controlos de reprodução Auto Radio</string>
     <string name="notification_ready">Pronto para reproduzir</string>

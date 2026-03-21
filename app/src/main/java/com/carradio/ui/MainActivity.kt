@@ -60,12 +60,18 @@ class MainActivity : ComponentActivity() {
 
     private fun scheduleDim() {
         dimHandler.removeCallbacks(dimRunnable)
-        dimHandler.postDelayed(dimRunnable, DIM_DELAY_MS)
+        val prefs = getSharedPreferences("carradio_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("dim_enabled", true)) {
+            dimHandler.postDelayed(dimRunnable, DIM_DELAY_MS)
+        }
     }
 
     private fun dimScreen() {
+        val prefs = getSharedPreferences("carradio_prefs", Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("dim_enabled", true)) return
+        val brightness = prefs.getInt("dim_brightness", 10) / 100f
         val params = window.attributes
-        params.screenBrightness = MIN_BRIGHTNESS
+        params.screenBrightness = brightness.coerceAtLeast(0.01f)
         window.attributes = params
     }
 

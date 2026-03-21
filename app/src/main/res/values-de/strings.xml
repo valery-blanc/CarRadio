@@ -66,6 +66,15 @@
     <string name="about_data">Stationsdaten: radio-browser.info</string>
     <string name="page_indicator">Seite %1$d / 2</string>
 
+    <string name="dim_screen_enabled">Helligkeit nach 30s Inaktivität reduzieren</string>
+    <string name="dim_brightness_label">Reduzierte Helligkeit: %1$d%%</string>
+
+    <string name="play">Abspielen</string>
+    <string name="add_to_favorites">Zu Favoriten hinzufügen</string>
+    <string name="add_favorites_page">Favoritenseite hinzufügen</string>
+    <string name="move">Verschieben</string>
+    <string name="move_hint">Zielkachel antippen</string>
+
     <string name="notification_channel_name">Radio-Wiedergabe</string>
     <string name="notification_channel_description">Auto Radio Wiedergabesteuerung</string>
     <string name="notification_ready">Bereit zur Wiedergabe</string>
