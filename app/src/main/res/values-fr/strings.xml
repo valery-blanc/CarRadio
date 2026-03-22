@@ -72,6 +72,9 @@
     <string name="play">Jouer</string>
     <string name="add_to_favorites">Ajouter aux favoris</string>
     <string name="add_favorites_page">Ajouter une page de favoris</string>
+    <string name="remove_favorite_page">Supprimer cette page de favoris</string>
+    <string name="remove_page_confirm">Attention, cette page et tous les favoris qu\'elle contient vont être supprimés. Confirmer ?</string>
+    <string name="confirm">Confirmer</string>
     <string name="move">Déplacer</string>
     <string name="move_hint">Appuyez sur la tuile cible</string>
     <string name="go_to_home">Aller aux favoris</string>

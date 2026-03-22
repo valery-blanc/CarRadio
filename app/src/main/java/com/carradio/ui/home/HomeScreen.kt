@@ -4,6 +4,7 @@
 )
 package com.carradio.ui.home
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -25,15 +27,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size as GeometrySize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.carradio.R
 import com.carradio.data.db.FavoriteStation
 import com.carradio.player.PlayerState
+import com.carradio.ui.favorites.FavoritesViewModel
 import com.carradio.ui.favorites.SearchPageContent
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
@@ -60,35 +66,26 @@ fun HomeScreen(
     val currentStation by viewModel.currentStation.collectAsState()
     val favoritePageCount by viewModel.favoritePageCount.collectAsState()
 
+    // FavoritesViewModel passed explicitly — avoids hiltViewModel() as default parameter
+    val favoritesViewModel: FavoritesViewModel = hiltViewModel()
+
     val favoriteUuids = remember(favorites) { favorites.map { it.uuid }.toSet() }
 
-    // FEAT-013 : pager circulaire infini — totalPages × 10 000 pages, mapping modulo
+    // Pager linéaire simple : page 0 = recherche, pages 1..N = favoris.
+    // Pas de pager circulaire — les boutons Home/Search dans la TopAppBar assurent
+    // la navigation rapide (FEAT-013). Sans modulo, l'ajout de page ne provoque
+    // aucun décalage visuel et les états internes de SearchPageContent sont préservés.
     val totalPages = favoritePageCount + 1
     val pagerState = rememberPagerState(
-        initialPage = run {
-            val t = totalPages
-            val mid = t * 5_000  // milieu du range [0, t×10_000)
-            mid + if (favoritePageCount > 0) 1 else 0
-        },
-        pageCount = { totalPages * 10_000 }
+        initialPage = if (favoritePageCount > 0) 1 else 0,
+        pageCount = { totalPages }
     )
     val coroutineScope = rememberCoroutineScope()
 
-    // Page réelle courante (0 = recherche, 1..N = favoris)
-    val currentRealPage = pagerState.currentPage % totalPages
+    val currentRealPage = pagerState.currentPage
 
-    // Navigation directe vers une vraie page dans le pager infini
     val goToPage: suspend (Int) -> Unit = { realTarget ->
-        val curr = pagerState.currentPage
-        pagerState.animateScrollToPage(curr - (curr % totalPages) + realTarget)
-    }
-
-    // Scroll vers la 1ère page favori quand les favoris deviennent disponibles (BUG-014)
-    LaunchedEffect(favoritePageCount) {
-        if (favoritePageCount > 0 && currentRealPage == 0) {
-            val curr = pagerState.currentPage
-            pagerState.scrollToPage(curr - (curr % totalPages) + 1)
-        }
+        pagerState.animateScrollToPage(realTarget)
     }
 
     val slots: List<FavoriteStation?> = remember(favorites, favoritePageCount) {
@@ -110,6 +107,8 @@ fun HomeScreen(
     var longPressPosition by remember { mutableStateOf<Int?>(null) }
     // TopAppBar menu
     var menuExpanded by remember { mutableStateOf(false) }
+    // Remove page confirmation dialog
+    var showRemovePageConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -208,11 +207,24 @@ fun HomeScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.add_favorites_page)) },
+                                leadingIcon = { FavoritesPageGridIcon() },
                                 onClick = {
                                     menuExpanded = false
                                     viewModel.addBlankPage()
                                 }
                             )
+                            if (currentRealPage > 0) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.remove_favorite_page)) },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.DeleteForever, contentDescription = null)
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showRemovePageConfirm = true
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -243,21 +255,23 @@ fun HomeScreen(
                 state = pagerState,
                 modifier = Modifier.weight(1f)
             ) { page ->
-                val realPage = page % totalPages
-                if (realPage == 0) {
-                    // FEAT-013 : page recherche (realPage 0)
+                if (page == 0) {
+                    // Page recherche
                     SearchPageContent(
                         favoriteUuids = favoriteUuids,
                         currentStationUuid = currentStation?.uuid,
                         onPlayStation = { viewModel.playStation(it) },
                         onStopPlayback = { viewModel.stopPlayback() },
                         onAddFavoriteStation = { viewModel.addFavoriteToNextAvailableSlot(it) },
-                        onRemoveFavoriteStation = { viewModel.removeFavorite(it.uuid) }
+                        onRemoveFavoriteStation = { viewModel.removeFavorite(it.uuid) },
+                        viewModel = favoritesViewModel
                     )
                 } else {
-                    // Pages favoris (realPage 1..N)
-                    val favPage = realPage - 1
-                    val pageSlots = slots.subList(favPage * 8, minOf(favPage * 8 + 8, slots.size))
+                    // Pages favoris (page 1..N)
+                    val favPage = page - 1
+                    val from = (favPage * 8).coerceAtMost(slots.size)
+                    val to = (favPage * 8 + 8).coerceAtMost(slots.size)
+                    val pageSlots = slots.subList(from, to)
                         .let { list ->
                             list + List(maxOf(0, 8 - list.size)) { null }
                         }
@@ -329,6 +343,32 @@ fun HomeScreen(
         }
     }
 
+    // Remove page confirmation dialog
+    if (showRemovePageConfirm) {
+        val pageToRemove = currentRealPage
+        AlertDialog(
+            onDismissRequest = { showRemovePageConfirm = false },
+            text = { Text(stringResource(R.string.remove_page_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRemovePageConfirm = false
+                    // Navigate away BEFORE removing so pager doesn't land on an out-of-range page
+                    coroutineScope.launch {
+                        goToPage((pageToRemove - 1).coerceAtLeast(0))
+                        viewModel.removeFavoritePage(pageToRemove)
+                    }
+                }) {
+                    Text(stringResource(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemovePageConfirm = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            }
+        )
+    }
+
     // Long press dialog
     longPressPosition?.let { pos ->
         val station = slots.getOrNull(pos)
@@ -363,9 +403,12 @@ fun HomeScreen(
 @Composable
 private fun AdBanner() {
     val context = LocalContext.current
-    val displayMetrics = context.resources.displayMetrics
-    val adWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
-    val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, adWidthDp)
+    // remember avoids recomputing display metrics on every recomposition
+    val adSize = remember(context) {
+        val displayMetrics = context.resources.displayMetrics
+        val adWidthDp = (displayMetrics.widthPixels / displayMetrics.density).toInt()
+        AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, adWidthDp)
+    }
 
     AndroidView(
         modifier = Modifier
@@ -377,8 +420,34 @@ private fun AdBanner() {
                 setAdSize(adSize)
                 loadAd(AdRequest.Builder().build())
             }
-        }
+        },
+        onRelease = { it.destroy() } // Prevents AdView memory leak on composition exit
     )
+}
+
+/** Icône grille 2×4 représentant une page de 8 favoris. */
+@Composable
+private fun FavoritesPageGridIcon(modifier: Modifier = Modifier) {
+    val color = LocalContentColor.current
+    Canvas(modifier = modifier.size(24.dp)) {
+        // Grille 2 colonnes × 4 lignes dans un carré 24×24 dp
+        // Marges: 1dp, gap colonnes: 2dp, gap lignes: 2dp
+        // Largeur cellule: (24-1-2-1)/2 = 10, hauteur: (24-1-2*3-1)/4 = 4
+        val m = size.width / 24f          // 1dp en px
+        val cellW = size.width * 10f / 24f
+        val cellH = size.height * 4f / 24f
+        val gapX = size.width * 2f / 24f
+        val gapY = size.height * 2f / 24f
+        for (row in 0 until 4) {
+            for (col in 0 until 2) {
+                drawRect(
+                    color = color,
+                    topLeft = Offset(m + col * (cellW + gapX), m + row * (cellH + gapY)),
+                    size = GeometrySize(cellW, cellH)
+                )
+            }
+        }
+    }
 }
 
 @Composable

@@ -8,6 +8,9 @@ import dagger.hilt.android.HiltAndroidApp
 class CarRadioApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        MobileAds.initialize(this)
+        // Initialize AdMob on a background thread to avoid delaying app startup
+        Thread {
+            MobileAds.initialize(this) { /* Initialization complete — ads ready to load */ }
+        }.apply { isDaemon = true }.start()
     }
 }

@@ -9,6 +9,7 @@ import com.carradio.data.db.toFavorite
 import com.carradio.domain.model.Country
 import com.carradio.domain.model.RadioStation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,11 +39,13 @@ class RadioRepositoryImpl @Inject constructor(
         favoriteDao.deleteAtPosition(position)
     }
 
+    // Delegates to the DAO @Transaction method for atomicity
     override suspend fun swapFavorites(fromPosition: Int, toPosition: Int) {
-        val from = favoriteDao.getAtPosition(fromPosition) ?: return
-        val to = favoriteDao.getAtPosition(toPosition)
-        favoriteDao.updatePosition(from.uuid, toPosition)
-        if (to != null) favoriteDao.updatePosition(to.uuid, fromPosition)
+        favoriteDao.swapFavorites(fromPosition, toPosition)
+    }
+
+    override suspend fun removeFavoritePage(pageStart: Int, slotsPerPage: Int) {
+        favoriteDao.removePage(pageStart, slotsPerPage)
     }
 
     override suspend fun getFavoritesCount(): Int =
@@ -61,8 +64,8 @@ class RadioRepositoryImpl @Inject constructor(
             .filter { it.iso.isNotBlank() && it.stationCount > 0 }
             .map { it.toDomain() }
 
-        countryCacheDao.clearAll()
-        countryCacheDao.insertAll(countries.map { it.toCache() })
+        // Atomic clear + insert via @Transaction DAO method
+        countryCacheDao.replaceAll(countries.map { it.toCache() })
         return countries
     }
 
@@ -79,6 +82,10 @@ class RadioRepositoryImpl @Inject constructor(
         api.getStationsByTag(tag).map { it.toDomain() }
 
     override suspend fun notifyClick(stationUuid: String) {
-        try { api.notifyClick(stationUuid) } catch (_: Exception) { }
+        try {
+            api.notifyClick(stationUuid)
+        } catch (e: CancellationException) {
+            throw e // Never swallow coroutine cancellation
+        } catch (_: Exception) { }
     }
 }

@@ -21,8 +21,11 @@ import javax.inject.Singleton
 class PlayerController @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    val player: ExoPlayer by lazy {
-        ExoPlayer.Builder(context)
+    // Nullable backing field so stop() can skip initialization when never used
+    private var playerInstance: ExoPlayer? = null
+
+    val player: ExoPlayer
+        get() = playerInstance ?: ExoPlayer.Builder(context)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
@@ -31,8 +34,12 @@ class PlayerController @Inject constructor(
                 true
             )
             .build()
-            .also { it.addListener(playerListener) }
-    }
+            .also {
+                it.addListener(playerListener)
+                playerInstance = it
+            }
+
+    val isPlayerInitialized: Boolean get() = playerInstance != null
 
     private val _state = MutableStateFlow(PlayerState.IDLE)
     val state: StateFlow<PlayerState> = _state.asStateFlow()
@@ -40,19 +47,21 @@ class PlayerController @Inject constructor(
     private val _currentStation = MutableStateFlow<RadioStation?>(null)
     val currentStation: StateFlow<RadioStation?> = _currentStation.asStateFlow()
 
+    // onEvents() fires once after all pending events are dispatched — eliminates
+    // the race condition between onPlaybackStateChanged and onIsPlayingChanged.
     private val playerListener = object : Player.Listener {
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            _state.value = when (playbackState) {
-                Player.STATE_BUFFERING -> PlayerState.LOADING
-                Player.STATE_READY -> if (player.isPlaying) PlayerState.PLAYING else PlayerState.PAUSED
-                Player.STATE_IDLE, Player.STATE_ENDED -> PlayerState.IDLE
-                else -> PlayerState.IDLE
-            }
-        }
-
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            if (_state.value != PlayerState.LOADING) {
-                _state.value = if (isPlaying) PlayerState.PLAYING else PlayerState.PAUSED
+        override fun onEvents(player: Player, events: Player.Events) {
+            if (events.containsAny(
+                    Player.EVENT_PLAYBACK_STATE_CHANGED,
+                    Player.EVENT_IS_PLAYING_CHANGED
+                )
+            ) {
+                _state.value = when {
+                    player.playbackState == Player.STATE_BUFFERING -> PlayerState.LOADING
+                    player.isPlaying -> PlayerState.PLAYING
+                    player.playbackState == Player.STATE_READY -> PlayerState.PAUSED
+                    else -> PlayerState.IDLE
+                }
             }
         }
 
@@ -68,33 +77,40 @@ class PlayerController @Inject constructor(
         val intent = Intent(context, RadioPlayerService::class.java)
         context.startForegroundService(intent)
 
-        val mediaItem = MediaItem.Builder()
-            .setUri(station.streamUrl)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(station.name)
-                    .setArtworkUri(station.faviconUrl?.toUri())
-                    .build()
-            )
-            .build()
+        try {
+            val mediaItem = MediaItem.Builder()
+                .setUri(station.streamUrl)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(station.name)
+                        .setArtworkUri(station.faviconUrl?.toUri())
+                        .build()
+                )
+                .build()
 
-        player.setMediaItem(mediaItem)
-        player.prepare()
-        player.play()
-        _state.value = PlayerState.LOADING
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            player.play()
+            _state.value = PlayerState.LOADING
+        } catch (_: Exception) {
+            _state.value = PlayerState.ERROR
+        }
     }
 
     fun pause() {
-        player.pause()
+        try { playerInstance?.pause() } catch (_: Exception) { }
     }
 
     fun resume() {
-        player.play()
+        try { playerInstance?.play() } catch (_: Exception) { }
     }
 
     fun stop() {
-        player.stop()
-        player.clearMediaItems()
+        val p = playerInstance ?: return // Never initialized — nothing to stop
+        try {
+            p.stop()
+            p.clearMediaItems()
+        } catch (_: Exception) { }
         _state.value = PlayerState.IDLE
         _currentStation.value = null
         // BUG-016 : arrêter le service quand la lecture s'arrête pour éviter qu'Android

@@ -20,8 +20,8 @@ class RadioPlayerService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
 
     companion object {
-        private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "carradio_playback"
+        private const val NOTIFICATION_ID = 1001
     }
 
     override fun onCreate() {
@@ -32,8 +32,12 @@ class RadioPlayerService : MediaSessionService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        // BUG-001 : startForegroundService() exige que startForeground() soit appelé dans les 5s.
+        // Media3 appelle startForeground() seulement quand le player passe en BUFFERING/PLAYING,
+        // ce qui peut dépasser ce délai. On appelle startForeground() immédiatement avec une
+        // notification minimale ; Media3 la mettra à jour dès que la lecture commence.
         startForeground(NOTIFICATION_ID, buildInitialNotification())
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
@@ -50,6 +54,13 @@ class RadioPlayerService : MediaSessionService() {
         super.onDestroy()
     }
 
+    private fun buildInitialNotification(): Notification =
+        NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(getString(R.string.app_name))
+            .setSilent(true)
+            .build()
+
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
@@ -61,12 +72,4 @@ class RadioPlayerService : MediaSessionService() {
         getSystemService(NotificationManager::class.java)
             .createNotificationChannel(channel)
     }
-
-    private fun buildInitialNotification(): Notification =
-        NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.app_name))
-            .setContentText(getString(R.string.notification_ready))
-            .setSmallIcon(android.R.drawable.ic_media_play)
-            .setSilent(true)
-            .build()
 }

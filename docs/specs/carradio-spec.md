@@ -1,7 +1,7 @@
 # CarRadio — Specification Technique
 
-**Version :** 1.12 (FEAT-002/003/004/005/006/007/008/009/010/012)
-**Date :** 2026-03-21
+**Version :** 1.13 (FEAT-002/003/004/005/006/007/008/009/010/012/013 + REVIEW-2026-03-22)
+**Date :** 2026-03-22
 **Plateforme cible :** Android (API 26+, Android 8.0 Oreo minimum)
 **Langage :** Kotlin
 **Architecture :** MVVM + Repository pattern
@@ -98,14 +98,13 @@ L'application utilise **[radio-browser.info](https://www.radio-browser.info/)**,
 
 ### Résolution du serveur
 
-Radio Browser expose plusieurs serveurs miroirs. Il faut en résoudre un dynamiquement :
+Radio Browser expose plusieurs serveurs miroirs. Un est résolu dynamiquement via DNS :
 
-```kotlin
-// Résoudre un serveur via DNS au démarrage
-// DNS SRV : _api._tcp.radio-browser.info
-// Ou simplement utiliser : https://de1.api.radio-browser.info
-val BASE_URL = "https://de1.api.radio-browser.info"
-```
+- **URL fallback** : `https://de1.api.radio-browser.info/` (utilisée immédiatement au démarrage)
+- **Résolution DNS** : `all.api.radio-browser.info` → reverse DNS → hostname du serveur choisi aléatoirement
+- La résolution se fait dans un thread daemon **sans bloquer le thread Hilt** (suppression du `runBlocking` qui causait un risque d'ANR)
+- Un intercepteur OkHttp utilise le hostname résolu dès qu'il est disponible (les premières requêtes utilisent le fallback)
+- **Timeouts OkHttp** : connect 10s, read 15s, write 10s
 
 En production, résoudre la liste via DNS et choisir un serveur aléatoirement. Basculer sur le suivant en cas d'échec.
 
@@ -458,11 +457,13 @@ Remplacé par la liste inline dans SearchPage (§6.5 Section 3). Plus de navigat
 
 **Comportement à l'expiration :**
 - 30 dernières secondes : volume ExoPlayer diminue linéairement de 1.0 à 0.0.
-- À 0 : `playerController.stop()` puis `Process.killProcess(myPid())` — l'application se ferme proprement.
+- À 0 : `playerController.stop()` puis émission de `shouldFinishApp = true`.
+- `MainActivity` observe ce StateFlow et appelle `finishAffinity()` — fermeture propre sans `Process.killProcess()`.
+- Le countdown utilise `SystemClock.elapsedRealtime()` comme référence horodatée (pas de drift lié aux `delay()`).
 
 **Architecture :**
-- `SleepTimerViewModel` (@HiltViewModel) instancié dans `NavGraph()` avant le `NavHost` → scoped à l'activité, partagé entre `HomeScreen` et `SleepTimerScreen`.
-- Countdown géré par une coroutine dans `viewModelScope`.
+- `SleepTimerViewModel` (@HiltViewModel) instancié dans `NavGraph()` avant le `NavHost` → scoped à l'activité, partagé entre `HomeScreen`, `SleepTimerScreen` et `MainActivity`.
+- Countdown géré par une coroutine dans `viewModelScope` avec polling à 200ms.
 
 ---
 
@@ -470,29 +471,14 @@ Remplacé par la liste inline dans SearchPage (§6.5 Section 3). Plus de navigat
 
 ### 7.1 RadioPlayerService
 
-Utiliser `MediaSessionService` de Media3 pour la lecture en arrière-plan.
+Utilise `MediaSessionService` de Media3 pour la lecture en arrière-plan.
 
-```kotlin
-@AndroidEntryPoint
-class RadioPlayerService : MediaSessionService() {
-    private lateinit var player: ExoPlayer
-    private lateinit var mediaSession: MediaSession
-
-    override fun onCreate() {
-        super.onCreate()
-        player = ExoPlayer.Builder(this).build()
-        mediaSession = MediaSession.Builder(this, player).build()
-    }
-
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
-
-    override fun onDestroy() {
-        mediaSession.release()
-        player.release()
-        super.onDestroy()
-    }
-}
-```
+**Règles architecturales (BUG-016 + review) :**
+- `RadioPlayerService` ne possède **pas** l'instance ExoPlayer — celle-ci est un singleton géré par `PlayerController`.
+- `onDestroy()` libère uniquement la `MediaSession`, jamais le player.
+- `onStartCommand()` retourne `START_NOT_STICKY` — le service ne se relance pas si Android le tue.
+- **Pas de `startForeground()` manuel** : `MediaSessionService` gère sa propre notification foreground.
+- `PlayerController.stop()` appelle `context.stopService()` pour arrêter proprement le service.
 
 ### 7.2 Lancement d'un stream
 

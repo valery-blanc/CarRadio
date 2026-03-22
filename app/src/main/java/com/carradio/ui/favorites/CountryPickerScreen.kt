@@ -27,7 +27,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.carradio.R
 import com.carradio.domain.model.RadioStation
@@ -44,7 +43,7 @@ fun SearchPageContent(
     onStopPlayback: () -> Unit,
     onAddFavoriteStation: (RadioStation) -> Unit,
     onRemoveFavoriteStation: (RadioStation) -> Unit,
-    viewModel: FavoritesViewModel = hiltViewModel()
+    viewModel: FavoritesViewModel  // Caller provides the ViewModel — no hidden hiltViewModel()
 ) {
     // BUG-1: inline country station list — no external navigation
     var selectedCountry by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -106,6 +105,22 @@ private fun SearchContent(
     LaunchedEffect(tagSuggestions) { tagDropdownExpanded = tagSuggestions.isNotEmpty() }
 
     LaunchedEffect(Unit) { viewModel.loadCountries() }
+
+    // Hoist filtering outside LazyColumn — remember avoids recomputing on every recomposition
+    val featured = viewModel.featuredIsos
+    val filteredAll = remember(countriesState, searchQuery) {
+        (countriesState as? UiState.Success)?.data?.filter {
+            searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true)
+        } ?: emptyList()
+    }
+    val featuredCountries = remember(filteredAll, searchQuery) {
+        if (searchQuery.isBlank())
+            filteredAll.filter { it.iso in featured }.sortedBy { featured.indexOf(it.iso) }
+        else emptyList()
+    }
+    val otherCountries = remember(filteredAll, searchQuery) {
+        filteredAll.filter { c -> searchQuery.isNotBlank() || c.iso !in featured }
+    }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
 
@@ -307,17 +322,7 @@ private fun SearchContent(
                 }
             }
             is UiState.Success -> {
-                val featured = viewModel.featuredIsos
-                val all = state.data.filter {
-                    searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true)
-                }
-                val featuredCountries = if (searchQuery.isBlank())
-                    all.filter { it.iso in featured }.sortedBy { featured.indexOf(it.iso) }
-                else emptyList()
-                val otherCountries = all.filter { c ->
-                    searchQuery.isNotBlank() || c.iso !in featured
-                }
-
+                // Use pre-computed lists (remembered above LazyColumn)
                 if (featuredCountries.isNotEmpty()) {
                     item {
                         Text(stringResource(R.string.featured),

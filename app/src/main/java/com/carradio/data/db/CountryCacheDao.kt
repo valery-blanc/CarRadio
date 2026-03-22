@@ -16,4 +16,11 @@ interface CountryCacheDao {
 
     @Query("SELECT lastFetchedAt FROM countries_cache LIMIT 1")
     suspend fun getLastFetchedAt(): Long?
+
+    // Atomic cache refresh — clear + insert in a single DB transaction
+    @Transaction
+    suspend fun replaceAll(countries: List<CountryCache>) {
+        clearAll()
+        insertAll(countries)
+    }
 }

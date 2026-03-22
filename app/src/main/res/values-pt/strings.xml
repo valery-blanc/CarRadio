@@ -72,6 +72,9 @@
     <string name="play">Reproduzir</string>
     <string name="add_to_favorites">Adicionar aos favoritos</string>
     <string name="add_favorites_page">Adicionar página de favoritos</string>
+    <string name="remove_favorite_page">Remover esta página de favoritos</string>
+    <string name="remove_page_confirm">Atenção: esta página e todos os seus favoritos serão removidos. Confirmar?</string>
+    <string name="confirm">Confirmar</string>
     <string name="move">Mover</string>
     <string name="move_hint">Toque na célula de destino</string>
     <string name="go_to_home">Ir para favoritos</string>

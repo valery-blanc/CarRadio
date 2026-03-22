@@ -177,3 +177,76 @@
 - [x] `HomeScreen.kt` : BUG-015 condition mise à jour (currentPage > 0)
 - [x] Strings × 5 langues : go_to_home, go_to_search
 - [ ] Déployé et confirmé par l'utilisateur
+
+## REVIEW-2026-03-22 : Correctifs revue de code (37 issues)
+
+### CRITICAL (3 fixes)
+- [x] 1.1 `NetworkModule.kt` : suppression `runBlocking` (risque ANR au démarrage)
+- [x] 1.1 `RadioBrowserService.kt` : résolution DNS dans thread daemon background + intercepteur hôte dynamique
+- [x] 1.2 `DatabaseModule.kt` : ajout `fallbackToDestructiveMigration()` (évite crash sur migration manquante)
+- [x] 1.3 `SleepTimerViewModel.kt` : `Process.killProcess` → `_shouldFinishApp` StateFlow observé par MainActivity → `finishAffinity()`
+
+### HIGH (8 fixes)
+- [x] 2.1 `FavoriteDao.kt` : méthode `swapFavorites` avec `@Transaction` (atomicité du swap)
+- [x] 2.1 `RadioRepositoryImpl.kt` : délégation au DAO pour `swapFavorites`
+- [x] 2.2 `RadioBrowserService.kt` : timeouts OkHttp (connect 10s, read 15s, write 10s)
+- [x] 2.4 `PlayerController.kt` : `onEvents()` à la place de deux callbacks séparés (élimine race condition)
+- [x] 2.5 `PlayerController.kt` : try-catch sur les opérations player (play, pause, resume, stop)
+- [x] 2.6 `HomeScreen.kt` : `onRelease = { it.destroy() }` sur AdView (évite memory leak)
+- [x] 2.8/2.9 `RadioPlayerService.kt` : suppression `startForeground` manuel dans `onStartCommand`, passage à `START_NOT_STICKY`
+  - [!] RÉVERT PARTIEL : `startForeground()` restauré (cf. BUG-017 — ForegroundServiceDidNotStartInTimeException)
+- [x] 2.10 `HomeViewModel.kt` : try-catch sur `notifyClick`, `playerController` privé
+- [x] 2.11 `CountryPickerScreen.kt` : suppression du paramètre par défaut `hiltViewModel()` dans `SearchPageContent`
+
+### MEDIUM (8 fixes)
+- [x] 3.1 `MainActivity.kt` : `FLAG_KEEP_SCREEN_ON` lié à l'état du player (via collectAsState)
+- [x] 3.2 `MainActivity.kt` : instance SharedPreferences mise en cache (by lazy)
+- [x] 3.3 `HomeViewModel.kt` : `withTimeoutOrNull(5_000)` sur `getFavorites().first()` dans init
+- [x] 3.4 `SleepTimerViewModel.kt` : drift corrigé via `SystemClock.elapsedRealtime()`
+- [x] 3.5 `SleepTimerViewModel.kt` : `onCleared()` appelle `cancelTimer()` (reset volume + annulation job)
+- [x] 3.6 `CountryCacheDao.kt` : méthode `replaceAll` avec `@Transaction`
+- [x] 3.6 `RadioRepositoryImpl.kt` : utilisation de `countryCacheDao.replaceAll()`
+- [x] 3.7 `RadioBrowserService.kt` : logging conditionnel `BuildConfig.DEBUG`
+- [x] 3.8 `CarRadioApplication.kt` : `MobileAds.initialize` dans thread background
+- [x] 3.9 `proguard-rules.pro` : règles Coil ajoutées
+- [x] 3.10 `HomeScreen.kt` : guard sur `slots.subList()` (coerceAtMost)
+- [x] 3.11 `HomeScreen.kt` : multiplicateur pager 10 000 → 100
+- [x] 3.12 `AndroidManifest.xml` : suppression `usesCleartextTraffic` redondant
+
+### LOW (5 fixes)
+- [x] 4.1 `RadioRepositoryImpl.kt` : `CancellationException` re-thrown dans `notifyClick`
+- [x] 4.2 `HomeViewModel.kt` : `playerController` rendu privé
+- [x] 4.3 `PlayerController.kt` : champ nullable `playerInstance` + check `isPlayerInitialized` dans `stop()`
+- [x] 4.5 `HomeScreen.kt` : `adSize` dans `remember {}` (évite recalcul à chaque recomposition)
+- [x] 4.6 `MainActivity.kt` : constante `MIN_BRIGHTNESS` utilisée dans `dimScreen()`
+- [x] 4.7 `CarRadioApplication.kt` : completion listener sur `MobileAds.initialize`
+- [x] 4.8 `CountryPickerScreen.kt` : filtrage pays dans `remember {}` (hissé avant LazyColumn)
+
+### Déploiement
+- [x] Déployé sur appareil (REVIEW fixes)
+- [ ] Testé et confirmé par l'utilisateur
+- [ ] Commit
+
+## BUG-017 : ForegroundServiceDidNotStartInTimeException (BUG-001 réintroduit par REVIEW)
+
+- [x] Diagnostic via logcat : `ForegroundServiceDidNotStartInTimeException` confirmé
+- [x] `RadioPlayerService.kt` : restauration `startForeground(NOTIFICATION_ID, buildInitialNotification())` dans `onStartCommand()`
+- [ ] Déployé et confirmé par l'utilisateur
+- [ ] Commit
+
+## BUG-018 : Navigation quitte la page recherche lors de la création d'une nouvelle page favoris
+
+- Cause racine : quand `totalPages` change (N→N+1), `currentRealPage = pagerState.currentPage % totalPages` change car le modulo change — même sans scroll de l'utilisateur
+- [x] `HomeScreen.kt` : `LaunchedEffect(favoritePageCount)` ré-ancre le pager sur la même page visuelle via `oldRealPage = currentPage % oldTotalPages`, clampé à `favoritePageCount` (gère aussi la suppression de page)
+- [ ] Déployé et confirmé par l'utilisateur
+- [ ] Commit
+
+## FEAT-014 : Suppression d'une page de favoris
+
+- [x] `FavoriteDao.kt` : `deleteInRange`, `shiftPositionsDown`, `removePage` @Transaction
+- [x] `RadioRepository.kt` + `RadioRepositoryImpl.kt` : `removeFavoritePage(pageStart, slotsPerPage)`
+- [x] `HomeViewModel.kt` : `removeFavoritePage(realPageIndex)` (supprime favoris + compacte positions + décrémente count)
+- [x] `HomeScreen.kt` : menu item "Remove this favorites page" (visible sur pages favoris) + dialog de confirmation
+- [x] Strings × 5 langues : `remove_favorite_page`, `remove_page_confirm`, `confirm`
+- [ ] Déployé et confirmé par l'utilisateur
+- [ ] Commit

@@ -19,7 +19,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "carradio.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "carradio.db")
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides
     fun provideFavoriteDao(db: AppDatabase): FavoriteDao = db.favoriteDao()

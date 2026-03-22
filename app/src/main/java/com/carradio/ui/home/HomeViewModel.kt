@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 private const val PREF_FAVORITE_PAGE_COUNT = "favorite_page_count"
@@ -26,7 +27,7 @@ private const val SLOTS_PER_PAGE = 8
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: RadioRepository,
-    val playerController: PlayerController,
+    private val playerController: PlayerController, // private: only this VM uses it
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -45,21 +46,26 @@ class HomeViewModel @Inject constructor(
     val favoritePageCount: StateFlow<Int> = _favoritePageCount.asStateFlow()
 
     init {
-        // BUG-2: auto-correct pageCount if favorites exist in DB but pageCount is 0
+        // BUG-014: auto-correct pageCount if favorites exist in DB but pageCount is 0
         // (happens after reinstall with Android Auto Backup restoring DB but not prefs)
         viewModelScope.launch {
-            val existing = repository.getFavorites().first()
-            if (existing.isNotEmpty()) {
-                val neededPages = existing.maxOf { it.position / SLOTS_PER_PAGE } + 1
-                if (_favoritePageCount.value < neededPages) {
-                    saveFavoritePageCount(neededPages)
+            try {
+                val existing = withTimeoutOrNull(5_000) { repository.getFavorites().first() }
+                    ?: return@launch
+                if (existing.isNotEmpty()) {
+                    val neededPages = existing.maxOf { it.position / SLOTS_PER_PAGE } + 1
+                    if (_favoritePageCount.value < neededPages) {
+                        saveFavoritePageCount(neededPages)
+                    }
                 }
-            }
+            } catch (_: Exception) { }
         }
     }
 
     fun onTileTapped(station: RadioStation) {
-        viewModelScope.launch { repository.notifyClick(station.uuid) }
+        viewModelScope.launch {
+            try { repository.notifyClick(station.uuid) } catch (_: Exception) { }
+        }
         playerController.togglePlayPause(station)
     }
 
@@ -68,13 +74,16 @@ class HomeViewModel @Inject constructor(
     }
 
     fun playStation(station: RadioStation) {
-        viewModelScope.launch { repository.notifyClick(station.uuid) }
+        viewModelScope.launch {
+            try { repository.notifyClick(station.uuid) } catch (_: Exception) { }
+        }
         playerController.play(station)
     }
 
     fun addFavoriteToNextAvailableSlot(station: RadioStation) {
         viewModelScope.launch {
-            val currentFavorites = repository.getFavorites().first()
+            val currentFavorites = withTimeoutOrNull(5_000) { repository.getFavorites().first() }
+                ?: return@launch
             val usedPositions = currentFavorites.map { it.position }.toSet()
             var pageCount = _favoritePageCount.value
             var targetPos = -1
@@ -107,6 +116,15 @@ class HomeViewModel @Inject constructor(
 
     fun removeFavorite(uuid: String) {
         viewModelScope.launch { repository.removeFavorite(uuid) }
+    }
+
+    fun removeFavoritePage(realPageIndex: Int) {
+        // realPageIndex 1..N (search = 0) → favPageIndex 0..N-1
+        val pageStart = (realPageIndex - 1) * SLOTS_PER_PAGE
+        viewModelScope.launch {
+            repository.removeFavoritePage(pageStart, SLOTS_PER_PAGE)
+            saveFavoritePageCount(_favoritePageCount.value - 1)
+        }
     }
 
     private fun saveFavoritePageCount(count: Int) {

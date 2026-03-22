@@ -6,8 +6,6 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import javax.inject.Singleton
 
 @Module
@@ -16,10 +14,5 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRadioBrowserApi(): RadioBrowserApi {
-        val baseUrl = runBlocking(Dispatchers.IO) {
-            RadioBrowserService.resolveBaseUrl()
-        }
-        return RadioBrowserService.createApi(baseUrl)
-    }
+    fun provideRadioBrowserApi(): RadioBrowserApi = RadioBrowserService.createApi()
 }

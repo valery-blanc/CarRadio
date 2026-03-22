@@ -72,6 +72,9 @@
     <string name="play">Abspielen</string>
     <string name="add_to_favorites">Zu Favoriten hinzufügen</string>
     <string name="add_favorites_page">Favoritenseite hinzufügen</string>
+    <string name="remove_favorite_page">Diese Favoritenseite entfernen</string>
+    <string name="remove_page_confirm">Achtung: Diese Seite und alle ihre Favoriten werden gelöscht. Bestätigen?</string>
+    <string name="confirm">Bestätigen</string>
     <string name="move">Verschieben</string>
     <string name="move_hint">Zielkachel antippen</string>
     <string name="go_to_home">Zu Favoriten</string>

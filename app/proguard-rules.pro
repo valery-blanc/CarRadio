@@ -46,3 +46,7 @@
 # ── AdMob ─────────────────────────────────────────────────────────────────────
 -keep class com.google.android.gms.ads.** { *; }
 -dontwarn com.google.android.gms.**
+
+# ── Coil ──────────────────────────────────────────────────────────────────────
+-dontwarn coil.**
+-keep class coil.** { *; }
