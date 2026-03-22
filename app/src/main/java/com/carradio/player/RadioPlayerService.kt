@@ -41,7 +41,9 @@ class RadioPlayerService : MediaSessionService() {
 
     override fun onDestroy() {
         mediaSession?.run {
-            player.release()
+            // Ne pas appeler player.release() ici : le player est un singleton géré
+            // par PlayerController (durée de vie = process). L'appeler ici causerait
+            // un audio focus leak lors de la prochaine lecture (BUG-016).
             release()
             mediaSession = null
         }

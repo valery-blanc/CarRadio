@@ -78,6 +78,10 @@
     <string name="dim_screen_enabled">Dim screen after 30s of inactivity</string>
     <string name="dim_brightness_label">Reduced brightness: %1$d%%</string>
 
+    <!-- Navigation rapide (FEAT-013) -->
+    <string name="go_to_home">Go to favorites</string>
+    <string name="go_to_search">Go to search</string>
+
     <!-- Home menu & tiles -->
     <string name="play">Play</string>
     <string name="add_to_favorites">Add to favorites</string>

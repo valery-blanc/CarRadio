@@ -74,6 +74,8 @@
     <string name="add_favorites_page">Agregar página de favoritos</string>
     <string name="move">Mover</string>
     <string name="move_hint">Toca la baldosa de destino</string>
+    <string name="go_to_home">Ir a favoritos</string>
+    <string name="go_to_search">Ir a la búsqueda</string>
 
     <string name="notification_channel_name">Reproducción de radio</string>
     <string name="notification_channel_description">Controles de reproducción Auto Radio</string>

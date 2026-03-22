@@ -7,18 +7,24 @@ package com.carradio.ui.home
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -56,13 +62,46 @@ fun HomeScreen(
 
     val favoriteUuids = remember(favorites) { favorites.map { it.uuid }.toSet() }
 
-    val totalPages = favoritePageCount + 1  // last page = search
-    val pagerState = rememberPagerState(pageCount = { totalPages })
+    // FEAT-013 : pager circulaire infini — totalPages × 10 000 pages, mapping modulo
+    val totalPages = favoritePageCount + 1
+    val pagerState = rememberPagerState(
+        initialPage = run {
+            val t = totalPages
+            val mid = t * 5_000  // milieu du range [0, t×10_000)
+            mid + if (favoritePageCount > 0) 1 else 0
+        },
+        pageCount = { totalPages * 10_000 }
+    )
     val coroutineScope = rememberCoroutineScope()
+
+    // Page réelle courante (0 = recherche, 1..N = favoris)
+    val currentRealPage = pagerState.currentPage % totalPages
+
+    // Navigation directe vers une vraie page dans le pager infini
+    val goToPage: suspend (Int) -> Unit = { realTarget ->
+        val curr = pagerState.currentPage
+        pagerState.animateScrollToPage(curr - (curr % totalPages) + realTarget)
+    }
+
+    // Scroll vers la 1ère page favori quand les favoris deviennent disponibles (BUG-014)
+    LaunchedEffect(favoritePageCount) {
+        if (favoritePageCount > 0 && currentRealPage == 0) {
+            val curr = pagerState.currentPage
+            pagerState.scrollToPage(curr - (curr % totalPages) + 1)
+        }
+    }
 
     val slots: List<FavoriteStation?> = remember(favorites, favoritePageCount) {
         val map = favorites.associateBy { it.position }
         (0 until favoritePageCount * 8).map { map[it] }
+    }
+
+    // BUG-015: clavier intempestif — clearFocus dès qu'on est sur une page de favoris
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
+        if (!pagerState.isScrollInProgress && currentRealPage > 0) {
+            focusManager.clearFocus()
+        }
     }
 
     // Move mode state
@@ -77,16 +116,42 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_launcher_foreground),
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_launcher_foreground),
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.app_name))
                     }
                 },
                 actions = {
+                    // FEAT-013 : icône Home sur page recherche (si favoris existent)
+                    if (currentRealPage == 0 && favoritePageCount > 0) {
+                        IconButton(onClick = {
+                            coroutineScope.launch { goToPage(1) }
+                        }) {
+                            Icon(Icons.Default.Home,
+                                contentDescription = stringResource(R.string.go_to_home))
+                        }
+                    }
+                    // FEAT-013 : icône Search sur pages favoris
+                    if (currentRealPage > 0) {
+                        IconButton(onClick = {
+                            coroutineScope.launch { goToPage(0) }
+                        }) {
+                            Icon(Icons.Default.Search,
+                                contentDescription = stringResource(R.string.go_to_search))
+                        }
+                    }
                     // Timer countdown (cliquable)
                     if (isTimerRunning && remainingSeconds != null) {
                         TextButton(onClick = onNavigateToTimer) {
@@ -178,38 +243,45 @@ fun HomeScreen(
                 state = pagerState,
                 modifier = Modifier.weight(1f)
             ) { page ->
-                if (page < favoritePageCount) {
-                    // Favorites page
-                    val pageSlots = slots.subList(page * 8, minOf(page * 8 + 8, slots.size))
+                val realPage = page % totalPages
+                if (realPage == 0) {
+                    // FEAT-013 : page recherche (realPage 0)
+                    SearchPageContent(
+                        favoriteUuids = favoriteUuids,
+                        currentStationUuid = currentStation?.uuid,
+                        onPlayStation = { viewModel.playStation(it) },
+                        onStopPlayback = { viewModel.stopPlayback() },
+                        onAddFavoriteStation = { viewModel.addFavoriteToNextAvailableSlot(it) },
+                        onRemoveFavoriteStation = { viewModel.removeFavorite(it.uuid) }
+                    )
+                } else {
+                    // Pages favoris (realPage 1..N)
+                    val favPage = realPage - 1
+                    val pageSlots = slots.subList(favPage * 8, minOf(favPage * 8 + 8, slots.size))
                         .let { list ->
-                            // Ensure exactly 8 elements
                             list + List(maxOf(0, 8 - list.size)) { null }
                         }
                     TileGrid(
                         slots = pageSlots,
-                        pageOffset = page * 8,
+                        pageOffset = favPage * 8,
                         currentStationUuid = currentStation?.uuid,
                         playerState = playerState,
                         selectedForMove = selectedForMove,
                         onTileTap = { position ->
                             when {
                                 selectedForMove != null -> {
-                                    // Move mode: swap selected with tapped position
                                     if (selectedForMove != position) {
                                         viewModel.swapFavorites(selectedForMove!!, position)
                                     }
                                     selectedForMove = null
                                 }
                                 slots.getOrNull(position) != null -> {
-                                    // Play/stop station
                                     val station = slots[position]!!.toDomain()
                                     viewModel.onTileTapped(station)
                                 }
                                 else -> {
-                                    // Empty tile → scroll to search page
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(favoritePageCount)
-                                    }
+                                    // Tuile vide → page recherche
+                                    coroutineScope.launch { goToPage(0) }
                                 }
                             }
                         },
@@ -219,16 +291,6 @@ fun HomeScreen(
                                 longPressPosition = position
                             }
                         }
-                    )
-                } else {
-                    // Search page (last page)
-                    SearchPageContent(
-                        favoriteUuids = favoriteUuids,
-                        currentStationUuid = currentStation?.uuid,
-                        onPlayStation = { viewModel.playStation(it) },
-                        onStopPlayback = { viewModel.stopPlayback() },
-                        onAddFavoriteStation = { viewModel.addFavoriteToNextAvailableSlot(it) },
-                        onRemoveFavoriteStation = { viewModel.removeFavorite(it.uuid) }
                     )
                 }
             }
@@ -241,8 +303,8 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 repeat(totalPages) { index ->
-                    val selected = pagerState.currentPage == index
-                    val isSearchPage = index == favoritePageCount
+                    val selected = currentRealPage == index
+                    val isSearchPage = index == 0
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)

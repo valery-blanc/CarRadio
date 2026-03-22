@@ -74,6 +74,8 @@
     <string name="add_favorites_page">Favoritenseite hinzufügen</string>
     <string name="move">Verschieben</string>
     <string name="move_hint">Zielkachel antippen</string>
+    <string name="go_to_home">Zu Favoriten</string>
+    <string name="go_to_search">Zur Suche</string>
 
     <string name="notification_channel_name">Radio-Wiedergabe</string>
     <string name="notification_channel_description">Auto Radio Wiedergabesteuerung</string>

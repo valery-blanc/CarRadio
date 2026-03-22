@@ -97,6 +97,10 @@ class PlayerController @Inject constructor(
         player.clearMediaItems()
         _state.value = PlayerState.IDLE
         _currentStation.value = null
+        // BUG-016 : arrêter le service quand la lecture s'arrête pour éviter qu'Android
+        // le détruise à l'improviste (ce qui libérait le player singleton et causait un
+        // audio focus leak lors de la prochaine lecture)
+        context.stopService(Intent(context, RadioPlayerService::class.java))
     }
 
     fun togglePlayPause(station: RadioStation) {

@@ -156,5 +156,24 @@
 ### Déploiement
 - [x] Build et déploiement sur appareil (APK debug)
 - [x] Test et confirmation utilisateur
-- [ ] Commit + push GitHub
-- [ ] Build release bundle (Play Store)
+- [x] Commit + push GitHub
+- [x] Build release bundle (Play Store) — versionCode 3, versionName 1.1
+
+## BUG-015 : Clavier virtuel intempestif sur pages favoris
+- [x] Fix : LocalFocusManager.clearFocus() dans LaunchedEffect(pagerState.currentPage)
+- [x] Déployé et confirmé par l'utilisateur
+
+## BUG-016 : Disparition complète du son après plusieurs utilisations
+- [x] `RadioPlayerService.onDestroy()` : suppression de `player.release()` (player appartient à PlayerController)
+- [x] `PlayerController.stop()` : ajout de `stopService()` pour arrêter le service proprement
+- [x] `docs/bugs/BUG-016-audio-focus-leak.md` créé
+- [ ] Déployé et confirmé par l'utilisateur
+
+## FEAT-013 : Navigation rapide entre recherche et favoris
+- [x] `docs/specs/FEAT-013-navigation-rapide.md` créé
+- [x] `HomeScreen.kt` : page recherche déplacée en index 0, favoris aux indices 1..N
+- [x] `HomeScreen.kt` : icône Home sur page recherche, icône Search sur pages favoris
+- [x] `HomeScreen.kt` : initialPage = 1 si favoris existent, LaunchedEffect pour BUG-014
+- [x] `HomeScreen.kt` : BUG-015 condition mise à jour (currentPage > 0)
+- [x] Strings × 5 langues : go_to_home, go_to_search
+- [ ] Déployé et confirmé par l'utilisateur
